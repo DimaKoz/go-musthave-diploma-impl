@@ -1,4 +1,4 @@
-# go-musthave-diploma-tpl
+# go-musthave-diploma-tpl ![Golang](https://img.shields.io/badge/-Golang%20❤️-05122A?style=flat&logo=go&logoColor=white)&nbsp; [![codecov](https://codecov.io/gh/DimaKoz/go-musthave-diploma-impl/branch/master/graph/badge.svg?token=VHZ6CU8FP6)](https://codecov.io/gh/DimaKoz/go-musthave-diploma-impl)
 
 Шаблон репозитория для индивидуального дипломного проекта курса «Go-разработчик»
 
