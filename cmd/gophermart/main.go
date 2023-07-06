@@ -1,9 +1,9 @@
 package main
 
-func main() {
-	DoNothing()
-}
+import (
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart"
+)
 
-func DoNothing() int {
-	return 0
+func main() {
+	gophermart.Run()
 }

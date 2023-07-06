@@ -1,21 +1,18 @@
 package main
 
-import "testing"
+import (
+	"syscall"
+	"testing"
+	"time"
 
-func TestDoNothing(t *testing.T) {
-	tests := []struct {
-		name string
-		want int
-	}{
-		{name: "test code cov", want: 0},
-	}
+	"github.com/stretchr/testify/assert"
+)
 
-	for _, tt := range tests {
-		ttt := tt
-		t.Run(ttt.name, func(t *testing.T) {
-			if got := DoNothing(); got != ttt.want {
-				t.Errorf("DoNothing() = %v, want %v", got, ttt.want)
-			}
-		})
-	}
+func TestGracefulShutdown(t *testing.T) {
+	go func() { // killer
+		time.Sleep(5 * time.Second)
+		err := syscall.Kill(syscall.Getpid(), syscall.SIGINT) // syscall.SIGTERM
+		assert.NoError(t, err)
+	}()
+	main()
 }
