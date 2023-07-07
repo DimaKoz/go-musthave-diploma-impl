@@ -41,8 +41,6 @@ func startServer() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutDelay)*time.Second)
 	defer cancel()
 	if err := echoFramework.Shutdown(ctx); err != nil {
-		echoFramework.Logger.Warn("ups")
-
 		echoFramework.Logger.Fatal(err)
 	}
 }

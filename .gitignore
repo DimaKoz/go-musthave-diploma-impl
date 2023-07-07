@@ -23,5 +23,7 @@ vendor/
 .vscode
 
 # Other local trash
+cover.out
 coverage.txt
 tstrun.sh
+cover.html
