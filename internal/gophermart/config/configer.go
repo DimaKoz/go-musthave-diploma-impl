@@ -9,6 +9,8 @@ import (
 	flag2 "github.com/spf13/pflag"
 )
 
+const EnvKeyAddress = "RUN_ADDRESS"
+
 // Config represents a config of the server.
 type Config struct {
 	Address      string `env:"RUN_ADDRESS"`

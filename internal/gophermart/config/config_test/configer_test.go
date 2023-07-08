@@ -115,7 +115,7 @@ func TestAgentInitConfig(t *testing.T) {
 	for _, test := range testsCasesInitConfig {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			envArgsInitConfig(t, "RUN_ADDRESS", test.args.envAddress) // ENV setup
+			envArgsInitConfig(t, config.EnvKeyAddress, test.args.envAddress) // ENV setup
 			envArgsInitConfig(t, "DATABASE_URI", test.args.envDB)
 			envArgsInitConfig(t, "ACCRUAL_SYSTEM_ADDRESS", test.args.envAccrual)
 			osArgOrig := os.Args

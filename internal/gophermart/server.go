@@ -3,21 +3,44 @@ package gophermart
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
 
 func Run() {
-	startServer()
+	cfg := config.NewConfig()
+	err := setupConfig(cfg, config.ProcessEnvServer)
+	if err != nil {
+		log.Error(err)
+
+		return
+	}
+	log.Info("cfg:" + cfg.String())
+	startServer(*cfg)
 }
 
-func startServer() {
+var errNoAddress = fmt.Errorf("server address is empty")
+
+func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
+	if err := config.LoadConfig(cfg, processing); err != nil {
+		return fmt.Errorf("couldn't create a config %w", err)
+	}
+	if cfg.Address == "" {
+		return errNoAddress
+	}
+
+	return nil
+}
+
+func startServer(cfg config.Config) {
 	// Setup
 	echoFramework := echo.New()
 	echoFramework.Logger.SetLevel(log.INFO)
@@ -25,12 +48,12 @@ func startServer() {
 		return c.NoContent(http.StatusOK) //nolint:wrapcheck
 	})
 	// Start server
-	go func() {
+	go func(cfg config.Config) {
 		echoFramework.Logger.Info("start server")
-		if err := echoFramework.Start(":8080"); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := echoFramework.Start(cfg.Address); err != nil && errors.Is(err, http.ErrServerClosed) {
 			echoFramework.Logger.Warn("shutting down the server")
 		}
-	}()
+	}(cfg)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
