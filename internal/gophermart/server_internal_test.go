@@ -1,11 +1,13 @@
 package gophermart
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/labstack/gommon/log"
 	flag2 "github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,4 +49,28 @@ func TestSetupConfigEmptyAddress(t *testing.T) {
 	cfg := config.NewConfig()
 	gotErr := setupConfig(cfg, config.ProcessEnvServer)
 	assert.Error(t, gotErr)
+}
+
+func TestRunEmptyAddress(t *testing.T) {
+	osArgOrig := os.Args
+	flag2.CommandLine = flag2.NewFlagSet(os.Args[0], flag2.ContinueOnError)
+	flag2.CommandLine.SetOutput(io.Discard)
+	os.Args = make([]string, 0)
+	os.Args = append(os.Args, osArgOrig[0])
+	t.Cleanup(func() { os.Args = osArgOrig })
+
+	output := CaptureOutput(func() {
+		Run()
+	})
+	assert.Contains(t, output, "server address is empty")
+	t.Log("log:", output)
+}
+
+func CaptureOutput(f func()) string {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	f()
+	log.SetOutput(os.Stderr)
+
+	return buf.String()
 }

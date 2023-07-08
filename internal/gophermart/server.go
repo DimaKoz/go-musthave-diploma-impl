@@ -18,13 +18,15 @@ import (
 func Run() {
 	cfg := config.NewConfig()
 	err := setupConfig(cfg, config.ProcessEnvServer)
+
 	if err != nil {
 		log.Error(err)
 
 		return
 	}
 	log.Info("cfg:" + cfg.String())
-	startServer(*cfg)
+	echoFramework := echo.New()
+	startServer(echoFramework, *cfg)
 }
 
 var errNoAddress = fmt.Errorf("server address is empty")
@@ -40,9 +42,8 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	return nil
 }
 
-func startServer(cfg config.Config) {
+func startServer(echoFramework *echo.Echo, cfg config.Config) {
 	// Setup
-	echoFramework := echo.New()
 	echoFramework.Logger.SetLevel(log.INFO)
 	echoFramework.GET("/", func(c echo.Context) error {
 		return c.NoContent(http.StatusOK) //nolint:wrapcheck
