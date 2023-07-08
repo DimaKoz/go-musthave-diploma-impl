@@ -3,8 +3,10 @@ module github.com/DimaKoz/go-musthave-diploma-impl
 go 1.19
 
 require (
+	github.com/caarlos0/env/v6 v6.10.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.6.0
 )
