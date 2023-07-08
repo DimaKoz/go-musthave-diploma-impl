@@ -42,7 +42,7 @@ func TestLoadConfigEnvError(t *testing.T) {
 }
 
 func TestConfigStringer(t *testing.T) {
-	want := "Address: b \n ConnectionDB: c \n Accrual: a \n"
+	want := "Address:[b] \n ConnectionDB:[c] \n Accrual:[a] \n"
 	cfg := config.NewConfig()
 	cfg.Accrual = "a"
 	cfg.Address = "b"

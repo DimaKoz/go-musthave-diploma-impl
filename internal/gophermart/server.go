@@ -27,7 +27,10 @@ func Run() {
 	startServer(echoFramework, *cfg)
 }
 
-var errNoAddress = fmt.Errorf("server address is empty")
+var (
+	errNoAddress = fmt.Errorf("server address is empty")
+	errNoPathDB  = fmt.Errorf("db uri is empty")
+)
 
 func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	if err := config.LoadConfig(cfg, processing); err != nil {
@@ -35,6 +38,9 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	}
 	if cfg.Address == "" {
 		return errNoAddress
+	}
+	if cfg.ConnectionDB == "" {
+		return errNoPathDB
 	}
 
 	return nil

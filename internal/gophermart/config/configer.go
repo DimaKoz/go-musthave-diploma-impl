@@ -9,7 +9,10 @@ import (
 	flag2 "github.com/spf13/pflag"
 )
 
-const EnvKeyAddress = "RUN_ADDRESS"
+const (
+	EnvKeyAddress     = "RUN_ADDRESS"
+	EnvKeyDatabaseURI = "DATABASE_URI"
+)
 
 // Config represents a config of the server.
 type Config struct {
@@ -73,6 +76,6 @@ func ProcessEnvServer(config *Config) error {
 }
 
 func (cfg Config) String() string {
-	return fmt.Sprintf("Address: %s \n ConnectionDB: %s \n Accrual: %s \n",
+	return fmt.Sprintf("Address:[%s] \n ConnectionDB:[%s] \n Accrual:[%s] \n",
 		cfg.Address, cfg.ConnectionDB, cfg.Accrual)
 }

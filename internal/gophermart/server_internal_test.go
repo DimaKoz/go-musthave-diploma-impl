@@ -16,14 +16,22 @@ import (
 func TestSetupConfigOk(t *testing.T) {
 	want := &config.Config{
 		Address:      ":8080",
-		ConnectionDB: "",
+		ConnectionDB: "ej",
 		Accrual:      "",
 	}
 
-	origValue := os.Getenv(config.EnvKeyAddress)
+	origValueAddress := os.Getenv(config.EnvKeyAddress)
 	err := os.Setenv(config.EnvKeyAddress, ":8080") //nolint:tenv
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.Setenv(config.EnvKeyAddress, origValue) })
+	origValuePathDB := os.Getenv(config.EnvKeyDatabaseURI)
+	err = os.Setenv(config.EnvKeyDatabaseURI, "ej") //nolint:tenv
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		err = os.Setenv(config.EnvKeyAddress, origValueAddress)
+		require.NoError(t, err)
+		err = os.Setenv(config.EnvKeyDatabaseURI, origValuePathDB)
+		require.NoError(t, err)
+	})
 	got := config.NewConfig()
 	err = setupConfig(got, config.ProcessEnvServer)
 	assert.NoError(t, err)
@@ -63,6 +71,23 @@ func TestRunEmptyAddress(t *testing.T) {
 		Run()
 	})
 	assert.Contains(t, output, "server address is empty")
+	t.Log("log:", output)
+}
+
+func TestRunEmptyPathDB(t *testing.T) {
+	osArgOrig := os.Args
+	flag2.CommandLine = flag2.NewFlagSet(os.Args[0], flag2.ContinueOnError)
+	flag2.CommandLine.SetOutput(io.Discard)
+	os.Args = make([]string, 0)
+	os.Args = append(os.Args, osArgOrig[0])
+	os.Args = append(os.Args, "-a")
+	os.Args = append(os.Args, ":8080")
+	t.Cleanup(func() { os.Args = osArgOrig })
+
+	output := CaptureOutput(func() {
+		Run()
+	})
+	assert.Contains(t, output, "db uri is empty")
 	t.Log("log:", output)
 }
 
