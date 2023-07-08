@@ -17,9 +17,7 @@ import (
 
 func Run() {
 	cfg := config.NewConfig()
-	err := setupConfig(cfg, config.ProcessEnvServer)
-
-	if err != nil {
+	if err := setupConfig(cfg, config.ProcessEnvServer); err != nil {
 		log.Error(err)
 
 		return
