@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io"
 	"os"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -13,6 +15,10 @@ import (
 )
 
 func TestGracefulShutdown(t *testing.T) {
+	rescueStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
 	go func() { // killer
 		time.Sleep(5 * time.Second)
 		err := syscall.Kill(syscall.Getpid(), syscall.SIGINT) // syscall.SIGTERM
@@ -27,9 +33,22 @@ func TestGracefulShutdown(t *testing.T) {
 	t.Cleanup(func() {
 		_ = os.Setenv(config.EnvKeyAddress, origValue)
 		_ = os.Setenv(config.EnvKeyDatabaseURI, origValue1)
+		util.CaptureOutputCleanup()
 	})
-	output := util.CaptureOutput(func() {
+	var wGroup sync.WaitGroup
+	wGroup.Add(1)
+
+	go func() {
+		defer wGroup.Done()
 		main()
-	})
-	assert.Contains(t, output, "shutting down the server")
+		time.Sleep(10 * time.Second)
+	}()
+	wGroup.Wait()
+
+	writer.Close()
+	out, _ := io.ReadAll(reader)
+	reader.Close()
+	os.Stdout = rescueStdout
+
+	assert.Contains(t, string(out), "shutting down the server")
 }

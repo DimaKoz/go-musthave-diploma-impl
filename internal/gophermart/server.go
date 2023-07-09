@@ -56,7 +56,7 @@ func startServer(echoFramework *echo.Echo, cfg config.Config) {
 	go func(cfg config.Config) {
 		echoFramework.Logger.Info("start server")
 		if err := echoFramework.Start(cfg.Address); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Warn("shutting down the server")
+			echoFramework.Logger.Warn("shutting down the server")
 		}
 	}(cfg)
 

@@ -9,6 +9,9 @@ import (
 )
 
 func TestCaptureOutput(t *testing.T) {
+	t.Cleanup(func() {
+		util.CaptureOutputCleanup()
+	})
 	want := "abc"
 
 	got := util.CaptureOutput(func() {

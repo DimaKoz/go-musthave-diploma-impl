@@ -64,7 +64,10 @@ func TestRunEmptyAddress(t *testing.T) {
 	flag2.CommandLine.SetOutput(io.Discard)
 	os.Args = make([]string, 0)
 	os.Args = append(os.Args, osArgOrig[0])
-	t.Cleanup(func() { os.Args = osArgOrig })
+	t.Cleanup(func() {
+		os.Args = osArgOrig
+		util.CaptureOutputCleanup()
+	})
 
 	output := util.CaptureOutput(func() {
 		Run()
@@ -81,7 +84,10 @@ func TestRunEmptyPathDB(t *testing.T) {
 	os.Args = append(os.Args, osArgOrig[0])
 	os.Args = append(os.Args, "-a")
 	os.Args = append(os.Args, ":8080")
-	t.Cleanup(func() { os.Args = osArgOrig })
+	t.Cleanup(func() {
+		os.Args = osArgOrig
+		util.CaptureOutputCleanup()
+	})
 
 	output := util.CaptureOutput(func() {
 		Run()
