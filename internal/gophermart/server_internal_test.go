@@ -1,13 +1,12 @@
 package gophermart
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
-	"github.com/labstack/gommon/log"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/util"
 	flag2 "github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,7 +66,7 @@ func TestRunEmptyAddress(t *testing.T) {
 	os.Args = append(os.Args, osArgOrig[0])
 	t.Cleanup(func() { os.Args = osArgOrig })
 
-	output := CaptureOutput(func() {
+	output := util.CaptureOutput(func() {
 		Run()
 	})
 	assert.Contains(t, output, "server address is empty")
@@ -84,18 +83,9 @@ func TestRunEmptyPathDB(t *testing.T) {
 	os.Args = append(os.Args, ":8080")
 	t.Cleanup(func() { os.Args = osArgOrig })
 
-	output := CaptureOutput(func() {
+	output := util.CaptureOutput(func() {
 		Run()
 	})
 	assert.Contains(t, output, "db uri is empty")
 	t.Log("log:", output)
-}
-
-func CaptureOutput(f func()) string {
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
-	f()
-	log.SetOutput(os.Stderr)
-
-	return buf.String()
 }

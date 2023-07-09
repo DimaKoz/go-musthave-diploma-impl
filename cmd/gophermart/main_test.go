@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +21,15 @@ func TestGracefulShutdown(t *testing.T) {
 	origValue := os.Getenv(config.EnvKeyAddress)
 	err := os.Setenv(config.EnvKeyAddress, ":8080") //nolint:tenv
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.Setenv(config.EnvKeyAddress, origValue) })
-	main()
+	origValue1 := os.Getenv(config.EnvKeyDatabaseURI)
+	err = os.Setenv(config.EnvKeyDatabaseURI, ":8080") //nolint:tenv
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = os.Setenv(config.EnvKeyAddress, origValue)
+		_ = os.Setenv(config.EnvKeyDatabaseURI, origValue1)
+	})
+	output := util.CaptureOutput(func() {
+		main()
+	})
+	assert.Contains(t, output, "shutting down the server")
 }
