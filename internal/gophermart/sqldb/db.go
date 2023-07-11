@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
@@ -67,4 +68,21 @@ COMMIT;`
 	}
 
 	return nil
+}
+
+func FindUserByUsername(pgConn *PgxIface, username string) (*credential.Credentials, error) {
+	var cred *credential.Credentials
+	var nameM, valueP string
+	row := (*pgConn).QueryRow(context.Background(), "select name, password from mart_users where name=$1", username)
+	err := row.Scan(&nameM, &valueP)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return cred, nil
+		}
+
+		return nil, fmt.Errorf("failed to scan a row: %w", err)
+	}
+	cred = credential.NewCredentials(nameM, valueP)
+
+	return cred, nil
 }

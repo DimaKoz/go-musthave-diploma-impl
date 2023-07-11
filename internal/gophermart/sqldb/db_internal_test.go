@@ -3,6 +3,8 @@ package sqldb
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"testing"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
@@ -80,4 +82,80 @@ func TestCreateTablesErr(t *testing.T) {
 
 	err = createTables(&pgConn, timeout)
 	assert.Error(t, err)
+}
+
+func TestFindUserByUsernameReturnsUser(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	rs := pgxmock.NewRows([]string{"name", "password"}).AddRow("user1", "pass1")
+
+	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
+		WithArgs("user1").
+		WillReturnRows(rs)
+
+	var pgConn PgxIface = mock
+	cred, err := FindUserByUsername(&pgConn, "user1")
+	assert.NoError(t, err)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestFindUserByUsernameReturnsNil(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	rs := pgxmock.NewRows([]string{"name", "password"})
+
+	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
+		WithArgs("user2").
+		WillReturnRows(rs)
+
+	var pgConn PgxIface = mock
+	cred, err := FindUserByUsername(&pgConn, "user2")
+	assert.NoError(t, err)
+	assert.Nil(t, cred)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestFindUserByUsernameReturnsErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
+		WithArgs("user2").
+		WillReturnError(io.EOF)
+
+	var pgConn PgxIface = mock
+	cred, err := FindUserByUsername(&pgConn, "user2")
+	assert.Error(t, err)
+	assert.Nil(t, cred)
+	assert.ErrorIs(t, err, io.EOF)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 }
