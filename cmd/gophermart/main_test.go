@@ -18,7 +18,8 @@ func TestGracefulShutdown(t *testing.T) {
 	rescueStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
-
+	_ = os.Setenv("GO_ENV1", "testing") //nolint:tenv
+	defer os.Unsetenv("GO_ENV1")
 	go func() { // killer
 		time.Sleep(5 * time.Second)
 		err := syscall.Kill(syscall.Getpid(), syscall.SIGINT) // syscall.SIGTERM

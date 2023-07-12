@@ -6,6 +6,11 @@ import (
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/security"
 )
 
+type IncomeCredentials struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
 type Credentials struct {
 	Username   string
 	HashedPass string

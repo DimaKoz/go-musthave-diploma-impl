@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
+	"github.com/pashagolub/pgxmock/v2"
 )
 
 type PgxIface interface {
@@ -26,22 +28,33 @@ type PgxIface interface {
 var errNoInfoConnectionDB = errors.New("no DB connection info")
 
 // ConnectDB opens a connection to the database.
-func ConnectDB(cfg *config.Config, logger echo.Logger) (*pgx.Conn, error) {
-	if cfg == nil || cfg.ConnectionDB == "" {
-		return nil, errNoInfoConnectionDB
+func ConnectDB(cfg *config.Config, logger echo.Logger) (*PgxIface, error) {
+	inTestRunning := os.Getenv("GO_ENV1") == "testing"
+	var conn PgxIface
+	var err error
+	if inTestRunning {
+		conn, err = pgxmock.NewConn()
+		if cfg == nil || cfg.ConnectionDB == "" {
+			return nil, errNoInfoConnectionDB
+		}
+	} else {
+		if cfg == nil || cfg.ConnectionDB == "" {
+			return nil, errNoInfoConnectionDB
+		}
+		conn, err = pgx.Connect(context.Background(), cfg.ConnectionDB)
 	}
-	conn, err := pgx.Connect(context.Background(), cfg.ConnectionDB)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get a DB connection: %w", err)
 	}
 	timeout := 10
-	var db PgxIface = conn
-	if err = createTables(&db, timeout); err != nil {
+
+	if err = createTables(&conn, timeout); err != nil {
 		return nil, err
 	}
 	logger.Info("successfully connected to db:", conn)
 
-	return conn, nil
+	return &conn, nil
 }
 
 func createTables(pgConn *PgxIface, timeout int) error {

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/handler"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
@@ -22,9 +24,18 @@ func Run() {
 
 		return
 	}
-	log.Info("cfg:" + cfg.String())
 	echoFramework := echo.New()
-	startServer(echoFramework, *cfg)
+	log.Info("cfg:" + cfg.String())
+	var err error
+	var conn *sqldb.PgxIface
+	if conn, err = sqldb.ConnectDB(cfg, echoFramework.Logger); err == nil {
+		defer (*conn).Close(context.Background())
+	} else if os.Getenv("GO_ENV1") != "testing" {
+		echoFramework.Logger.Errorf("failed to get a db connection by %s", err.Error())
+
+		return
+	}
+	startServer(echoFramework, conn, *cfg)
 }
 
 var (
@@ -46,12 +57,12 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	return nil
 }
 
-func startServer(echoFramework *echo.Echo, cfg config.Config) {
+func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config) {
 	// Setup
+	baseHandler := handler.NewBaseHandler(conn)
 	echoFramework.Logger.SetLevel(log.INFO)
-	echoFramework.GET("/", func(c echo.Context) error {
-		return c.NoContent(http.StatusOK) //nolint:wrapcheck
-	})
+	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
+
 	// Start server
 	go func(cfg config.Config) {
 		echoFramework.Logger.Info("start server")
