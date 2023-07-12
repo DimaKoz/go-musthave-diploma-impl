@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/pashagolub/pgxmock/v2"
@@ -155,6 +156,28 @@ func TestFindUserByUsernameReturnsErr(t *testing.T) {
 	assert.Nil(t, cred)
 	assert.ErrorIs(t, err, io.EOF)
 	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddCredentials(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	mock.ExpectExec("insert into mart_users").
+		WithArgs("user1", "pass1").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	var pgConn PgxIface = mock
+	err = AddCredentials(&pgConn, credential.NewCredentials("user1", "pass1"))
+	assert.NoError(t, err)
 
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)

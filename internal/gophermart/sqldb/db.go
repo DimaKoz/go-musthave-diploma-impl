@@ -70,6 +70,18 @@ COMMIT;`
 	return nil
 }
 
+func AddCredentials(pgConn *PgxIface, cred *credential.Credentials) error {
+	_, err := (*pgConn).Exec(
+		context.Background(),
+		"insert into mart_users(name, password) values($1, $2)",
+		cred.Username, cred.HashedPass)
+	if err != nil {
+		return fmt.Errorf("failed to insert into mart_users: %w", err)
+	}
+
+	return nil
+}
+
 func FindUserByUsername(pgConn *PgxIface, username string) (*credential.Credentials, error) {
 	var cred *credential.Credentials
 	var nameM, valueP string
