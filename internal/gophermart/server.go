@@ -62,6 +62,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	baseHandler := handler.NewBaseHandler(conn)
 	echoFramework.Logger.SetLevel(log.INFO)
 	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
+	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)
 
 	// Start server
 	go func(cfg config.Config) {
