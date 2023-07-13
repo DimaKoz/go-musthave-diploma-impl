@@ -2,7 +2,9 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repostory"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 )
@@ -32,4 +34,24 @@ func WrapHandlerErr(ctx echo.Context, statusCode int, msg string, errIn error) e
 	}
 
 	return err
+}
+
+var ErrUnauthorised = fmt.Errorf("unauthorized request")
+
+// IsAuthorized emulates authorization checks
+// returns true when "Authorization" header contains a 'right' data.
+func IsAuthorized(ctx echo.Context, dbConn *sqldb.PgxIface) bool {
+	authHeader := ctx.Request().Header.Get("Authorization")
+	if authHeader == "" {
+		return false
+	}
+	authValues := strings.Split(authHeader, ":[")
+	if rightLen := 2; len(authValues) != rightLen {
+		return false
+	}
+	auth := authValues[1]
+	auth = auth[:len(auth)-1]
+	cred, _ := repostory.GetCredentials(dbConn, auth)
+
+	return cred != nil
 }
