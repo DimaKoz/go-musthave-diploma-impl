@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,7 @@ func TestAddAuthHeaders(t *testing.T) {
 }
 
 func TestNewBaseHandler(t *testing.T) {
+	cfg := config.NewConfig()
 	type args struct {
 		dbConn *sqldb.PgxIface
 	}
@@ -43,14 +45,14 @@ func TestNewBaseHandler(t *testing.T) {
 		{
 			name: "nil dbConn",
 			args: args{dbConn: nil},
-			want: NewBaseHandler(nil),
+			want: NewBaseHandler(nil, *cfg),
 		},
 	}
 
 	for _, tt := range tests {
 		test := tt
 		t.Run(test.name, func(t *testing.T) {
-			got := NewBaseHandler(test.args.dbConn)
+			got := NewBaseHandler(test.args.dbConn, *cfg)
 			assert.NotNil(t, got)
 			assert.Equal(t, test.want, got)
 		})

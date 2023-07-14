@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repostory"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
@@ -12,12 +13,14 @@ import (
 // BaseHandler holds *pgx.Conn.
 type BaseHandler struct {
 	conn *sqldb.PgxIface
+	cfg  config.Config
 }
 
 // NewBaseHandler returns a new BaseHandler.
-func NewBaseHandler(dbConn *sqldb.PgxIface) *BaseHandler {
+func NewBaseHandler(dbConn *sqldb.PgxIface, cfg config.Config) *BaseHandler {
 	return &BaseHandler{
 		conn: dbConn,
+		cfg:  cfg,
 	}
 }
 

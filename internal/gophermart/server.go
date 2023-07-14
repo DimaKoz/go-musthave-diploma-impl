@@ -60,7 +60,7 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 
 func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config) {
 	// Setup
-	baseHandler := handler.NewBaseHandler(conn)
+	baseHandler := handler.NewBaseHandler(conn, cfg)
 	echoFramework.Logger.SetLevel(log.INFO)
 	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
 	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)

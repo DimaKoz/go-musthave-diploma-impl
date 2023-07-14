@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/ShiraazMoollatjie/goluhn v0.0.0-20211017190329-0d86158c056a
 	github.com/caarlos0/env/v6 v6.10.1
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/jackc/pgx/v5 v5.4.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
