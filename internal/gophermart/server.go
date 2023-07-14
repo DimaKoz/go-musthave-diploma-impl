@@ -12,6 +12,7 @@ import (
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/handler"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/middleware"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
@@ -64,7 +65,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
 	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)
 	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler)
-	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler)
+	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler, middleware.OrderValidator(echoFramework.Logger))
 
 	// Start server
 	go func(cfg config.Config) {
