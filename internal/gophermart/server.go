@@ -64,6 +64,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
 	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)
 	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler)
+	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler)
 
 	// Start server
 	go func(cfg config.Config) {
