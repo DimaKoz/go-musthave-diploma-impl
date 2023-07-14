@@ -21,13 +21,12 @@ func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
 	ctx.Request().Body.Close()
 
 	var acc accrual.Order
-	httpc := resty.New().
-		SetBaseURL(h.cfg.Accrual)
+	httpc := resty.New().SetHostURL(h.cfg.Accrual) //nolint:staticcheck
 
 	req := httpc.R().
 		SetResult(&acc).
 		SetPathParam("number", string(reqBody))
-
+	log.Println("OrdersListHandler:", "req.URL:", req.URL)
 	resp, err := req.Get("/api/orders/{number}")
 	if err != nil {
 		log.Println("OrdersListHandler:", "req.Get err:", err)
