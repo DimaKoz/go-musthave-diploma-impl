@@ -30,7 +30,9 @@ func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
 		SetPathParam("number", string(reqBody))
 
 	resp, err := req.Get("/api/orders/{number}")
-	log.Println("OrdersListHandler:", "req.URL:", resp.Request.URL)
+	if resp != nil && resp.Request != nil {
+		log.Println("OrdersListHandler:", "req.URL:", resp.Request.URL)
+	}
 
 	if err != nil {
 		log.Println("OrdersListHandler:", "req.Get err:", err)
