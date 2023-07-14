@@ -17,6 +17,8 @@ func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
 	if ctx.Request().Body != nil { // Read
 		reqBody, _ = io.ReadAll(ctx.Request().Body)
 	}
+	log.Println("OrdersListHandler:", "RequestURI:", ctx.Request().URL)
+	log.Println("OrdersListHandler:", "Header:", ctx.Request().Header)
 	log.Println("OrdersListHandler:", "body:", string(reqBody))
 	ctx.Request().Body.Close()
 
@@ -26,8 +28,10 @@ func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
 	req := httpc.R().
 		SetResult(&acc).
 		SetPathParam("number", string(reqBody))
-	log.Println("OrdersListHandler:", "req.URL:", req.URL)
+
 	resp, err := req.Get("/api/orders/{number}")
+	log.Println("OrdersListHandler:", "req.URL:", resp.Request.URL)
+
 	if err != nil {
 		log.Println("OrdersListHandler:", "req.Get err:", err)
 	}
