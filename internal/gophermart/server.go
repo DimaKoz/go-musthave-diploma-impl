@@ -64,8 +64,11 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	echoFramework.Logger.SetLevel(log.INFO)
 	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
 	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)
-	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler)
-	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler, middleware.OrderValidator(echoFramework.Logger))
+
+	authM := middleware.AuthValidator(conn, echoFramework.Logger)
+	orderValidM := middleware.OrderValidator(echoFramework.Logger)
+	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler, authM)
+	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler, authM, orderValidM)
 
 	// Start server
 	go func(cfg config.Config) {

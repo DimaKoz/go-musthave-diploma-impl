@@ -15,9 +15,6 @@ func OrderValidator(logger echo.Logger) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(echoCtx echo.Context) error {
-			if false { // hash is temporary disabled
-				return next(echoCtx)
-			}
 			// Request
 			reqBody := []byte{}
 			if echoCtx.Request().Body != nil { // Read
