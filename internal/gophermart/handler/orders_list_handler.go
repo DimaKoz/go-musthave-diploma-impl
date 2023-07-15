@@ -22,8 +22,8 @@ func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
 	log.Println("OrdersListHandler:", "body:", string(reqBody))
 	ctx.Request().Body.Close()
 
-	var acc accrual.Order
-	httpc := resty.New().SetHostURL(h.cfg.Accrual) //nolint:staticcheck
+	var acc accrual.OrderAccrual
+	httpc := resty.New().SetBaseURL(h.cfg.Accrual)
 
 	req := httpc.R().
 		SetResult(&acc).
