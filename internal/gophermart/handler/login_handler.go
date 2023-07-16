@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
-	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repostory"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,9 +17,9 @@ func (h *BaseHandler) LoginHandler(ctx echo.Context) error {
 		return WrapHandlerErr(ctx, http.StatusBadRequest, "LoginHandler: failed to parse json: %s", err)
 	}
 
-	cred, err := repostory.GetCredentials(h.conn, incomeCred.Login)
+	cred, err := repository.GetCredentials(h.conn, incomeCred.Login)
 	if err != nil {
-		if errors.Is(err, repostory.ErrUserNameNotFound) {
+		if errors.Is(err, repository.ErrUserNameNotFound) {
 			return WrapHandlerErr(ctx, http.StatusUnauthorized,
 				"LoginHandler: failed to find login by: %s", err)
 		}

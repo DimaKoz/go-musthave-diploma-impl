@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
-	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repostory"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 )
@@ -49,7 +49,7 @@ func IsAuthorized(ctx echo.Context, dbConn *sqldb.PgxIface) bool {
 		return false
 	}
 
-	cred, _ := repostory.GetCredentials(dbConn, auth)
+	cred, _ := repository.GetCredentials(dbConn, auth)
 
 	return cred != nil
 }

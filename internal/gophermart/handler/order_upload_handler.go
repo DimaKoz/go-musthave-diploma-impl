@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
-	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repostory"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 )
@@ -30,31 +30,21 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 	orderNumber := string(reqBody)
 	log.Println("OrderUploadHandler:", "body:", orderNumber)
 	username := GetAuthFromCtx(ctx)
-	err := repostory.AddNewOrder(h.conn, orderNumber, username)
+	err := repository.AddNewOrder(h.conn, orderNumber, username)
 
 	var respStatus int
 
 	switch {
 	case err == nil:
 		respStatus = orderAccepted
-	case errors.Is(err, repostory.ErrOrderAlreadyExistsByOwner):
+	case errors.Is(err, repository.ErrOrderAlreadyExistsByOwner):
 		respStatus = alreadyUploadedByOwner
-	case errors.Is(err, repostory.ErrOrderAlreadyExistsByAnother):
+	case errors.Is(err, repository.ErrOrderAlreadyExistsByAnother):
 		respStatus = alreadyUploadedByAnother
 	default:
 		respStatus = internalError
 	}
 
-	/*	if err == nil {
-			respStatus = orderAccepted
-		} else if errors.Is(err, repostory.ErrOrderAlreadyExistsByOwner) {
-			respStatus = alreadyUploadedByOwner
-		} else if errors.Is(err, repostory.ErrOrderAlreadyExistsByAnother) {
-			respStatus = alreadyUploadedByAnother
-		} else {
-			respStatus = internalError
-		}
-	*/
 	go sendAccRequest(orderNumber, h.cfg.Accrual)
 	if err := ctx.NoContent(respStatus); err != nil {
 		return fmt.Errorf("%w", err)
@@ -71,7 +61,7 @@ func sendAccRequest(number string, baseURL string) {
 		SetResult(&acc).
 		SetPathParam("number", number)
 
-	resp, err := req.Post("/api/orders/{number}")
+	resp, err := req.Get("/api/orders/{number}")
 	if resp != nil && resp.Request != nil {
 		log.Println("OrderUploadHandler:", "req.URL:", resp.Request.URL)
 	}
