@@ -145,6 +145,18 @@ func AddOrder(pgConn *PgxIface, order *accrual.OrderExt) error {
 	return nil
 }
 
+func UpdateOrder(pgConn *PgxIface, order *accrual.OrderExt) error {
+	_, err := (*pgConn).Exec(
+		context.Background(),
+		"UPDATE orders SET status = $1, accrual = $2 where WHERE number = $3",
+		order.Status, order.Accrual, order.Number)
+	if err != nil {
+		return fmt.Errorf("failed to update into orders: %w", err)
+	}
+
+	return nil
+}
+
 func FindOrderByNumber(pgConn *PgxIface, sNumber string) (*accrual.OrderExt, error) {
 	var order *accrual.OrderExt
 	var number, status, username string

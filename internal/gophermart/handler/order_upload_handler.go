@@ -6,11 +6,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,7 +48,7 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 		respStatus = internalError
 	}
 
-	go sendAccRequest(orderNumber, h.cfg.Accrual)
+	go SendAccRequest(h.conn, orderNumber, h.cfg.Accrual, username)
 	if err := ctx.NoContent(respStatus); err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -53,8 +56,9 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 	return nil
 }
 
-func sendAccRequest(number string, baseURL string) {
+func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, username string) *accrual.OrderExt {
 	var acc accrual.OrderAccrual
+	logger := zap.L().Sugar()
 	httpc := resty.New().SetBaseURL(baseURL)
 
 	req := httpc.R().
@@ -63,15 +67,26 @@ func sendAccRequest(number string, baseURL string) {
 
 	resp, err := req.Get("/api/orders/{number}")
 	if resp != nil && resp.Request != nil {
-		log.Println("OrderUploadHandler:", "req.URL:", resp.Request.URL)
+		logger.Info("OrderUploadHandler:", "req.URL:", resp.Request.URL)
 	}
 
 	if err != nil {
-		log.Println("OrderUploadHandler:", "req.Get err:", err)
+		logger.Info("OrderUploadHandler:", "req.Get err:", err)
 	}
 	if resp != nil {
-		log.Println("OrderUploadHandler:", "req.Get StatusCode:", resp.StatusCode())
-		log.Println("OrderUploadHandler:", "req.Get resp:", resp.String())
+		logger.Info("OrderUploadHandler:", "req.Get StatusCode:", resp.StatusCode())
+		logger.Info("OrderUploadHandler:", "req.Get resp:", resp.String())
 	}
 	log.Println("OrderUploadHandler:", "acc:", acc)
+	if acc.Order != "" {
+		order := acc.GetOrderExt(username, time.Now())
+		err = sqldb.UpdateOrder(pgConn, order)
+		if err != nil {
+			logger.Warn("err:", err.Error())
+		} else {
+			return order
+		}
+	}
+
+	return nil
 }

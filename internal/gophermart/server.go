@@ -35,6 +35,7 @@ func Run() {
 	if err = setupConfig(cfg, config.ProcessEnvServer); err != nil {
 		log.Error(err)
 		sugar.Error(err)
+
 		return
 	}
 	echoFramework := echo.New()
