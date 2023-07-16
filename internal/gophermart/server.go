@@ -15,28 +15,40 @@ import (
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/middleware"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
+	middleware2 "github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
 )
 
 func Run() {
-	cfg := config.NewConfig()
-	if err := setupConfig(cfg, config.ProcessEnvServer); err != nil {
-		log.Error(err)
+	var err error
+	loggerZap := zap.Must(zap.NewDevelopment())
 
+	defer func(logger *zap.Logger) {
+		_ = logger.Sync()
+	}(loggerZap)
+
+	sugar := *loggerZap.Sugar()
+	zap.ReplaceGlobals(loggerZap)
+
+	cfg := config.NewConfig()
+	if err = setupConfig(cfg, config.ProcessEnvServer); err != nil {
+		log.Error(err)
+		sugar.Error(err)
 		return
 	}
 	echoFramework := echo.New()
-	log.Info("cfg:" + cfg.String())
-	var err error
+	sugar.Info("cfg:" + cfg.String())
+
 	var conn *sqldb.PgxIface
 	if conn, err = sqldb.ConnectDB(cfg, echoFramework.Logger); err == nil {
 		defer (*conn).Close(context.Background())
 	} else if os.Getenv("GO_ENV1") != "testing" {
-		echoFramework.Logger.Errorf("failed to get a db connection by %s", err.Error())
+		sugar.Errorf("failed to get a db connection by %s", err.Error())
 
 		return
 	}
-	startServer(echoFramework, conn, *cfg)
+	startServer(echoFramework, conn, *cfg, sugar)
 }
 
 var (
@@ -58,21 +70,29 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	return nil
 }
 
-func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config) {
+func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config, sugar zap.SugaredLogger) {
+	loggerConfig := middleware.GetRequestLoggerConfig(sugar)
+	log2 := middleware2.RequestLoggerWithConfig(loggerConfig)
+	log3 := middleware2.BodyDump(middleware.GetBodyLoggerHandler(sugar))
+
 	// Setup
 	baseHandler := handler.NewBaseHandler(conn, cfg)
 	echoFramework.Logger.SetLevel(log.INFO)
-	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler)
-	echoFramework.POST("/api/user/login", baseHandler.LoginHandler)
+	echoFramework.POST("/api/user/register", baseHandler.RegistrationHandler,
+		log2, log3)
+	echoFramework.POST("/api/user/login", baseHandler.LoginHandler,
+		log2, log3)
 
 	authM := middleware.AuthValidator(conn, echoFramework.Logger)
 	orderValidM := middleware.OrderValidator(echoFramework.Logger)
-	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler, authM)
-	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler, authM, orderValidM)
+	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler,
+		log2, log3, authM)
+	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler,
+		log2, log3, authM, orderValidM)
 
 	// Start server
 	go func(cfg config.Config) {
-		echoFramework.Logger.Info("start server")
+		sugar.Info("start server")
 		if err := echoFramework.Start(cfg.Address); err != nil && errors.Is(err, http.ErrServerClosed) {
 			echoFramework.Logger.Warn("shutting down the server")
 		}
@@ -82,7 +102,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
-	echoFramework.Logger.Info("quit...")
+	sugar.Info("quit...")
 	timeoutDelay := 10
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutDelay)*time.Second)
 	defer cancel()

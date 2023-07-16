@@ -7,6 +7,7 @@ import (
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/handler"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 )
 
 // AuthValidator checks 'Authorization' header and its value.
@@ -18,11 +19,15 @@ func AuthValidator(dbConn *sqldb.PgxIface, logger echo.Logger) echo.MiddlewareFu
 	}
 }
 
-func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, logger echo.Logger, next echo.HandlerFunc) error {
+func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, _ echo.Logger, next echo.HandlerFunc) error {
+	logger := zap.L().Sugar()
+
+	logger.Info("AuthValidator: ", echoCtx.Request().Method, " ", echoCtx.Request().URL)
+	logger.Info("AuthValidator: Headers: ", echoCtx.Request().Header)
 	isAuthorized := handler.IsAuthorized(echoCtx, dbConn)
 	authHeader := echoCtx.Request().Header.Get("Authorization")
 	if !isAuthorized {
-		logger.Warnf("AuthValidator: failed to check an authorization for: [%s]",
+		logger.Warn("AuthValidator: failed to check an authorization for: [%s]",
 			authHeader)
 		err := handler.WrapHandlerErr(echoCtx, http.StatusUnauthorized,
 			"AuthValidator: failed to check an authorization: %s", handler.ErrUnauthorised)
