@@ -2,6 +2,13 @@ package accrual
 
 import "time"
 
+const (
+	OrderStatusNew        = "NEW"
+	OrderStatusProcessing = "PROCESSING"
+	OrderStatusInvalid    = "INVALID"
+	OrderStatusProcessed  = "PROCESSED"
+)
+
 type OrderAccrual struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`

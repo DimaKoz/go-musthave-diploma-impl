@@ -12,12 +12,13 @@ CREATE INDEX IF NOT EXISTS idx_mart_users_name
 
 CREATE TABLE IF NOT EXISTS orders
 (
-    id       SERIAL PRIMARY KEY,
-    number   VARCHAR(42)      NOT NULL,
-    status   VARCHAR(10)      NOT NULL,
-    accrual  DOUBLE PRECISION NOT NULL,
-    username VARCHAR(72)      NOT NULL
-    );
+    id          SERIAL PRIMARY KEY,
+    number      VARCHAR(42)      NOT NULL,
+    status      VARCHAR(10)      NOT NULL,
+    accrual     DOUBLE PRECISION NOT NULL,
+    username    VARCHAR(72)      NOT NULL,
+    uploaded_at TIMESTAMP        NOT NULL
+);
 
 CREATE INDEX IF NOT EXISTS idx_orders_number
     ON orders USING hash (number);

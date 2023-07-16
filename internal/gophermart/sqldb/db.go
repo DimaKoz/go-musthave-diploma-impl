@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -73,12 +74,13 @@ CREATE INDEX IF NOT EXISTS idx_mart_users_name
 
 CREATE TABLE IF NOT EXISTS orders
 (
-    id       SERIAL PRIMARY KEY,
-    number   VARCHAR(42)      NOT NULL,
-    status   VARCHAR(10)      NOT NULL,
-    accrual  DOUBLE PRECISION NOT NULL,
-    username VARCHAR(72)      NOT NULL
-    );
+    id          SERIAL PRIMARY KEY,
+    number      VARCHAR(42)      NOT NULL,
+    status      VARCHAR(10)      NOT NULL,
+    accrual     DOUBLE PRECISION NOT NULL,
+    username    VARCHAR(72)      NOT NULL,
+    uploaded_at TIMESTAMP        NOT NULL
+);
 
 CREATE INDEX IF NOT EXISTS idx_orders_number
     ON orders USING hash (number);
@@ -129,4 +131,36 @@ func FindUserByUsername(pgConn *PgxIface, username string) (*credential.Credenti
 	cred = credential.NewCredentials(nameM, valueP)
 
 	return cred, nil
+}
+
+func AddOrder(pgConn *PgxIface, order *accrual.OrderExt) error {
+	_, err := (*pgConn).Exec(
+		context.Background(),
+		"insert into orders(number, status, accrual, username, uploaded_at) values($1, $2, $3, $4, $5)",
+		order.Number, order.Status, order.Accrual, order.Username, order.UploadedAt)
+	if err != nil {
+		return fmt.Errorf("failed to insert into orders: %w", err)
+	}
+
+	return nil
+}
+
+func FindOrderByNumber(pgConn *PgxIface, sNumber string) (*accrual.OrderExt, error) {
+	var order *accrual.OrderExt
+	var number, status, username string
+	var uploadedAt time.Time
+	var accrualV float32
+	row := (*pgConn).QueryRow(context.Background(),
+		"SELECT number, status, accrual, username, uploaded_at FROM orders WHERE number=$1", sNumber)
+	err := row.Scan(&number, &status, &accrualV, &username, &uploadedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return order, nil
+		}
+
+		return nil, fmt.Errorf("failed to scan a row: %w", err)
+	}
+	order = accrual.NewOrderExt(number, status, accrualV, uploadedAt, username)
+
+	return order, nil
 }

@@ -44,17 +44,27 @@ var ErrUnauthorised = fmt.Errorf("unauthorized request")
 // IsAuthorized emulates authorization checks
 // returns true when "Authorization" header contains a 'right' data.
 func IsAuthorized(ctx echo.Context, dbConn *sqldb.PgxIface) bool {
-	authHeader := ctx.Request().Header.Get("Authorization")
-	if authHeader == "" {
+	auth := GetAuthFromCtx(ctx)
+	if auth == "" {
 		return false
 	}
-	authValues := strings.Split(authHeader, ":[")
-	if rightLen := 2; len(authValues) != rightLen {
-		return false
-	}
-	auth := authValues[1]
-	auth = auth[:len(auth)-1]
+
 	cred, _ := repostory.GetCredentials(dbConn, auth)
 
 	return cred != nil
+}
+
+func GetAuthFromCtx(ctx echo.Context) string {
+	authHeader := ctx.Request().Header.Get("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+	authValues := strings.Split(authHeader, ":[")
+	if rightLen := 2; len(authValues) != rightLen {
+		return ""
+	}
+	auth := authValues[1]
+	auth = auth[:len(auth)-1]
+
+	return auth
 }
