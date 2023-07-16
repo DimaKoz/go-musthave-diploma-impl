@@ -32,7 +32,7 @@ func TestGetOrderExt(t *testing.T) {
 	uploadedAt := now
 	username := "user1"
 
-	orderAcc := accrual2.OrderAccrual{Order: number, Status: status, Accrual: accrual}
+	orderAcc := &accrual2.OrderAccrual{Order: number, Status: status, Accrual: accrual}
 	want := &accrual2.OrderExt{
 		Username: username, Number: number, Status: status, Accrual: accrual, UploadedAt: uploadedAt,
 	}
@@ -40,4 +40,8 @@ func TestGetOrderExt(t *testing.T) {
 	got := orderAcc.GetOrderExt(username, uploadedAt)
 	assert.NotNil(t, got)
 	assert.Equal(t, want, got)
+
+	orderAcc = nil
+	got = orderAcc.GetOrderExt(username, uploadedAt)
+	assert.Nil(t, got)
 }

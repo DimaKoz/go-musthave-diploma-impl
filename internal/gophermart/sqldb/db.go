@@ -164,3 +164,27 @@ func FindOrderByNumber(pgConn *PgxIface, sNumber string) (*accrual.OrderExt, err
 
 	return order, nil
 }
+
+func FindOrdersByUsername(pgConn *PgxIface, username string) (*[]accrual.OrderExt, error) {
+	result := make([]accrual.OrderExt, 0)
+	rows, err := (*pgConn).Query(context.Background(),
+		"SELECT number, status, accrual, uploaded_at FROM orders WHERE username=$1", username)
+	if err != nil {
+		return &result, fmt.Errorf("failed to query: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var number, status string
+		var uploadedAt time.Time
+		var accrualV float32
+		err = rows.Scan(&number, &status, &accrualV, &uploadedAt)
+		if err != nil {
+			return &result, fmt.Errorf("failed to scan a row: %w", err)
+		}
+
+		order := accrual.NewOrderExt(number, status, accrualV, uploadedAt, username)
+		result = append(result, *order)
+	}
+
+	return &result, nil
+}

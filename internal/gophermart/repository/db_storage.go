@@ -60,3 +60,12 @@ func AddNewOrder(pgConn *sqldb.PgxIface, sNumber string, username string) error 
 
 	return nil
 }
+
+func GetOrdersByUser(pgConn *sqldb.PgxIface, username string) (*[]accrual.OrderExt, error) {
+	orders, err := sqldb.FindOrdersByUsername(pgConn, username)
+	if err != nil {
+		return orders, fmt.Errorf("%w", err)
+	}
+
+	return orders, nil
+}

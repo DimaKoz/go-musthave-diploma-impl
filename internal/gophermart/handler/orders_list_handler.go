@@ -1,48 +1,41 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
-	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
-	"github.com/go-resty/resty/v2"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
 	"github.com/labstack/echo/v4"
 )
 
 // OrdersListHandler handles GET `/api/user/orders`.
 func (h *BaseHandler) OrdersListHandler(ctx echo.Context) error {
-	reqBody := []byte{}
-	if ctx.Request().Body != nil { // Read
-		reqBody, _ = io.ReadAll(ctx.Request().Body)
-	}
-	log.Println("OrdersListHandler:", "RequestURI:", ctx.Request().URL)
-	log.Println("OrdersListHandler:", "Header:", ctx.Request().Header)
-	log.Println("OrdersListHandler:", "body:", string(reqBody))
-	ctx.Request().Body.Close()
-
-	var acc accrual.OrderAccrual
-	httpc := resty.New().SetBaseURL(h.cfg.Accrual)
-
-	req := httpc.R().
-		SetResult(&acc).
-		SetPathParam("number", string(reqBody))
-
-	resp, err := req.Get("/api/orders/{number}")
-	if resp != nil && resp.Request != nil {
-		log.Println("OrdersListHandler:", "req.URL:", resp.Request.URL)
-	}
-
+	username := GetAuthFromCtx(ctx)
+	orders, err := repository.GetOrdersByUser(h.conn, username)
 	if err != nil {
-		log.Println("OrdersListHandler:", "req.Get err:", err)
+		logStr := fmt.Sprintf("%s %s %s", "OrdersListHandler:", "internal error:", err.Error())
+		log.Println(logStr)
+		if err := ctx.String(http.StatusInternalServerError, logStr); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+		return nil
 	}
-	if resp != nil {
-		log.Println("OrdersListHandler:", "req.Get StatusCode:", resp.StatusCode())
-		log.Println("OrdersListHandler:", "req.Get resp:", resp.String())
+
+	if orders == nil || len(*orders) == 0 {
+		logStr := fmt.Sprintf("%s %s", "OrdersListHandler:", "no data to response")
+		log.Println(logStr)
+		if err := ctx.String(http.StatusNoContent, logStr); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+		return nil
 	}
-	log.Println("OrdersListHandler:", "acc:", acc)
-	if err := ctx.NoContent(http.StatusOK); err != nil {
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	ctx.Response().WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(ctx.Response()).Encode(orders); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
