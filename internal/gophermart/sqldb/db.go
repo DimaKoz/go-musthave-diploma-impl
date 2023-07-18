@@ -261,3 +261,32 @@ func GetCreditByUsername(pgConn *PgxIface, username string) (float32, error) {
 
 	return accrualV, nil
 }
+
+func FindWithdrawsByUsername(pgConn *PgxIface, username string) (*[]accrual.WithdrawExt, error) {
+	result := make([]accrual.WithdrawExt, 0)
+	rows, err := (*pgConn).Query(context.Background(),
+		"SELECT number, sum, uploaded_at FROM withdraws WHERE username=$1 ORDER BY uploaded_at ASC", username)
+	if err != nil {
+		return &result, fmt.Errorf("failed to query: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var number string
+		var uploadedAt time.Time
+		var sum float32
+		err = rows.Scan(&number, &sum, &uploadedAt)
+		if err != nil {
+			return &result, fmt.Errorf("failed to scan a row: %w", err)
+		}
+
+		withdraw := accrual.WithdrawExt{
+			Order:       number,
+			Sum:         sum,
+			ProcessedAt: uploadedAt,
+			Username:    username,
+		}
+		result = append(result, withdraw)
+	}
+
+	return &result, nil
+}

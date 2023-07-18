@@ -32,6 +32,22 @@ func GetCredentials(pgConn *sqldb.PgxIface, username string) (*credential.Creden
 	return cred, err
 }
 
+var ErrWithdrawsNoItems = fmt.Errorf("there are not withdrawals")
+
+func FindWithdrawsByUsername(pgConn *sqldb.PgxIface, username string) (*[]accrual.WithdrawExt, error) {
+	withdraws, err := sqldb.FindWithdrawsByUsername(pgConn, username)
+	if err != nil {
+		err = fmt.Errorf("failed to get withdraws by: %w", err)
+
+		return nil, err
+	}
+	if len(*withdraws) == 0 {
+		return nil, ErrWithdrawsNoItems
+	}
+
+	return withdraws, nil
+}
+
 var (
 	ErrCantAddOrder                = fmt.Errorf("failed to add order")
 	ErrOrderAlreadyExistsByOwner   = fmt.Errorf("failed to add order: order already exists by the owner")

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// BalanceHandler handles POST `/api/user/balance`.
+// BalanceHandler handles GET `/api/user/balance`.
 func (h *BaseHandler) BalanceHandler(ctx echo.Context) error {
 	username := GetAuthFromCtx(ctx)
 	log.Println("BalanceHandler:", "username:", username)

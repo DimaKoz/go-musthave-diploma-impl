@@ -94,6 +94,8 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 		log2, log3, authM)
 	echoFramework.GET("/api/user/balance", baseHandler.BalanceHandler,
 		log2, log3, authM)
+	echoFramework.GET("/api/user/withdrawals", baseHandler.WithdrawsListHandler,
+		log2, log3, authM)
 
 	// Start server
 	go func(cfg config.Config) {
