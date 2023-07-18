@@ -265,7 +265,7 @@ func GetCreditByUsername(pgConn *PgxIface, username string) (float32, error) {
 func FindWithdrawsByUsername(pgConn *PgxIface, username string) (*[]accrual.WithdrawExt, error) {
 	result := make([]accrual.WithdrawExt, 0)
 	rows, err := (*pgConn).Query(context.Background(),
-		"SELECT number, sum, uploaded_at FROM withdraws WHERE username=$1 ORDER BY uploaded_at ASC", username)
+		"SELECT number, sum, uploaded_at FROM withdraws WHERE username=$1 AND sum > 0.01 ORDER BY uploaded_at ASC", username)
 	if err != nil {
 		return &result, fmt.Errorf("failed to query: %w", err)
 	}
