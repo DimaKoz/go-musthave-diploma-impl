@@ -111,7 +111,6 @@ CREATE INDEX IF NOT EXISTS idx_withdraws_username
 
 COMMIT;
 `
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
 	defer cancel()
 
@@ -156,6 +155,18 @@ func AddOrder(pgConn *PgxIface, order *accrual.OrderExt) error {
 		context.Background(),
 		"insert into orders(number, status, accrual, username, uploaded_at) values($1, $2, $3, $4, $5)",
 		order.Number, order.Status, order.Accrual, order.Username, order.UploadedAt)
+	if err != nil {
+		return fmt.Errorf("failed to insert into orders: %w", err)
+	}
+
+	return nil
+}
+
+func AddWithdraw(pgConn *PgxIface, withdraw accrual.WithdrawExt) error {
+	_, err := (*pgConn).Exec(
+		context.Background(),
+		"insert into withdraws(number, sum, username, uploaded_at) values($1, $2, $3, $4)",
+		withdraw.Order, withdraw.Sum, withdraw.Username, withdraw.ProcessedAt)
 	if err != nil {
 		return fmt.Errorf("failed to insert into orders: %w", err)
 	}
@@ -230,6 +241,22 @@ func GetDebitByUsername(pgConn *PgxIface, username string) (float32, error) {
 		}
 
 		return 0, fmt.Errorf("failed to get debit: %w", err)
+	}
+
+	return accrualV, nil
+}
+
+func GetCreditByUsername(pgConn *PgxIface, username string) (float32, error) {
+	row := (*pgConn).QueryRow(context.Background(),
+		"SELECT COALESCE(SUM(sum),0) FROM withdraws WHERE username=$1", username)
+	var accrualV float32
+	err := row.Scan(&accrualV)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil
+		}
+
+		return 0, fmt.Errorf("failed to get credit: %w", err)
 	}
 
 	return accrualV, nil

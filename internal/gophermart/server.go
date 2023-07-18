@@ -90,6 +90,10 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 		log2, log3, authM)
 	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler,
 		log2, log3, authM, orderValidM)
+	echoFramework.POST("/api/user/balance/withdraw", baseHandler.WithdrawHandler,
+		log2, log3, authM)
+	echoFramework.GET("/api/user/balance", baseHandler.BalanceHandler,
+		log2, log3, authM)
 
 	// Start server
 	go func(cfg config.Config) {
