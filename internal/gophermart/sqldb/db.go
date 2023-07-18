@@ -91,6 +91,24 @@ CREATE INDEX IF NOT EXISTS idx_orders_username
 CREATE INDEX IF NOT EXISTS idx_orders_status
     ON orders USING hash (status);
 
+CREATE INDEX IF NOT EXISTS idx_orders_status_username
+    ON orders USING hash (username, status);
+
+CREATE TABLE IF NOT EXISTS withdraws
+(
+    id          SERIAL PRIMARY KEY,
+    number      VARCHAR(42)      NOT NULL,
+    sum         DOUBLE PRECISION NOT NULL,
+    username    VARCHAR(72)      NOT NULL,
+    uploaded_at TIMESTAMP        NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_withdraws_number
+    ON withdraws USING hash (number);
+
+CREATE INDEX IF NOT EXISTS idx_withdraws_username
+    ON withdraws USING hash (username);
+
 COMMIT;
 `
 
@@ -199,4 +217,20 @@ func FindOrdersByUsername(pgConn *PgxIface, username string) (*[]accrual.OrderEx
 	}
 
 	return &result, nil
+}
+
+func GetDebitByUsername(pgConn *PgxIface, username string) (float32, error) {
+	row := (*pgConn).QueryRow(context.Background(),
+		"SELECT COALESCE(SUM(accrual),0) FROM orders WHERE username=$1 AND status='PROCESSED'", username)
+	var accrualV float32
+	err := row.Scan(&accrualV)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil
+		}
+
+		return 0, fmt.Errorf("failed to get debit: %w", err)
+	}
+
+	return accrualV, nil
 }

@@ -161,6 +161,85 @@ func TestFindUserByUsernameReturnsErr(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+const testUsernameDebit = "login2"
+
+func TestGetDebitByUsernameReturnsErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	var want float32
+	mock.ExpectQuery("SELECT COALESCE\\(SUM\\(accrual\\),0\\)").
+		WithArgs(testUsernameDebit).
+		WillReturnError(io.EOF)
+
+	var pgConn PgxIface = mock
+	cred, err := GetDebitByUsername(&pgConn, testUsernameDebit)
+	assert.Error(t, err)
+	assert.Equal(t, want, cred)
+	assert.ErrorIs(t, err, io.EOF)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestGetDebitByUsernameReturns0(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	var want float32
+	mock.ExpectQuery("SELECT COALESCE\\(SUM\\(accrual\\),0\\)").
+		WithArgs(testUsernameDebit).WillReturnRows(pgxmock.NewRows([]string{"accrual"}))
+
+	var pgConn PgxIface = mock
+	cred, err := GetDebitByUsername(&pgConn, testUsernameDebit)
+	assert.NoError(t, err)
+	assert.Equal(t, want, cred)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestGetDebitByUsernameReturns42(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	var want float32 = 42.0
+	rows := mock.NewRows([]string{"accrual"}).
+		AddRow(want)
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	mock.ExpectQuery("SELECT COALESCE\\(SUM\\(accrual\\),0\\)").
+		WithArgs(testUsernameDebit).WillReturnRows(rows)
+
+	var pgConn PgxIface = mock
+	cred, err := GetDebitByUsername(&pgConn, testUsernameDebit)
+	assert.NoError(t, err)
+	assert.Equal(t, want, cred)
+	log.Println("cred:", cred)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
 func TestAddCredentials(t *testing.T) {
 	mock, err := pgxmock.NewConn()
 	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
