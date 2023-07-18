@@ -27,7 +27,7 @@ type WithdrawAccrual struct {
 
 type WithdrawExt struct {
 	Order       string    `json:"order"`
-	Sum         float32   `json:"accrual"`
+	Sum         float32   `json:"sum"`
 	ProcessedAt time.Time `json:"processed_at"` //nolint:tagliatelle
 	Username    string    `json:"-"`
 }
