@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_status
     ON orders USING hash (status);
 
 CREATE INDEX IF NOT EXISTS idx_orders_status_username
-    ON orders USING hash (username, status);
+    ON orders (username, status);
 
 CREATE TABLE IF NOT EXISTS withdraws
 (
