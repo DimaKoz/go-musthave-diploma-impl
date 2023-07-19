@@ -47,4 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_withdraws_number
 CREATE INDEX IF NOT EXISTS idx_withdraws_username
     ON withdraws USING hash (username);
 
+CREATE INDEX IF NOT EXISTS idx_withdraws_username_sum
+    ON withdraws (username, sum);
+
 COMMIT;

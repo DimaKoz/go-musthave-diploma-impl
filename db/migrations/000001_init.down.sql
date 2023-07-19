@@ -14,6 +14,8 @@ DROP INDEX IF EXISTS idx_withdraws_number;
 
 DROP INDEX IF EXISTS idx_withdraws_username;
 
+DROP INDEX IF EXISTS idx_withdraws_username_sum;
+
 DROP TABLE IF EXISTS mart_users;
 
 DROP TABLE IF EXISTS orders;

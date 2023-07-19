@@ -108,7 +108,8 @@ CREATE INDEX IF NOT EXISTS idx_withdraws_number
 
 CREATE INDEX IF NOT EXISTS idx_withdraws_username
     ON withdraws USING hash (username);
-
+CREATE INDEX IF NOT EXISTS idx_withdraws_status_username
+    ON withdraws (username, sum);
 COMMIT;
 `
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
