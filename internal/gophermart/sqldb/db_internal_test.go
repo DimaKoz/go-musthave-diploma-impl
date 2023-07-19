@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
@@ -257,6 +259,121 @@ func TestAddCredentials(t *testing.T) {
 	var pgConn PgxIface = mock
 	err = AddCredentials(&pgConn, credential.NewCredentials("user1", "pass1"))
 	assert.NoError(t, err)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddCredentialsErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	mock.ExpectExec("insert into mart_users").
+		WithArgs("user1", "pass1").
+		WillReturnError(io.EOF)
+
+	var pgConn PgxIface = mock
+	err = AddCredentials(&pgConn, credential.NewCredentials("user1", "pass1"))
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, io.EOF)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddOrder(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+	now := time.Now()
+	mock.ExpectExec("insert into orders").
+		WithArgs("79927398713", "NEW", float32(0), "user1", now).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	var pgConn PgxIface = mock
+	order := accrual.NewOrderExt("79927398713", "NEW", float32(0), now, "user1")
+	err = AddOrder(&pgConn, order)
+	assert.NoError(t, err)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddOrderErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+	now := time.Now()
+	mock.ExpectExec("insert into orders").
+		WithArgs("79927398713", "NEW", float32(0), "user1", now).WillReturnError(io.EOF)
+
+	var pgConn PgxIface = mock
+	order := accrual.NewOrderExt("79927398713", "NEW", float32(0), now, "user1")
+	err = AddOrder(&pgConn, order)
+	assert.Error(t, err)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddWithdraw(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+	now := time.Now()
+	mock.ExpectExec("insert into withdraws").
+		WithArgs("79927398713", float32(0), "user1", now).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	var pgConn PgxIface = mock
+	withdraw := accrual.NewWithdrawExt("79927398713", float32(0), now, "user1")
+	err = AddWithdraw(&pgConn, *withdraw)
+	assert.NoError(t, err)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestAddWithdrawErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+	now := time.Now()
+	mock.ExpectExec("insert into withdraws").
+		WithArgs("79927398713", float32(0), "user1", now).
+		WillReturnError(io.EOF)
+
+	var pgConn PgxIface = mock
+	withdraw := accrual.NewWithdrawExt("79927398713", float32(0), now, "user1")
+	err = AddWithdraw(&pgConn, *withdraw)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, io.EOF)
 
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
