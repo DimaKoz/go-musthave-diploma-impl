@@ -34,11 +34,11 @@ CREATE INDEX IF NOT EXISTS idx_orders_status_username
 
 CREATE TABLE IF NOT EXISTS withdraws
 (
-    id          SERIAL PRIMARY KEY,
-    number      VARCHAR(42)      NOT NULL,
-    sum         DOUBLE PRECISION NOT NULL,
-    username    VARCHAR(72)      NOT NULL,
-    uploaded_at TIMESTAMP        NOT NULL
+    id           SERIAL PRIMARY KEY,
+    number       VARCHAR(42)      NOT NULL,
+    sum          DOUBLE PRECISION NOT NULL,
+    username     VARCHAR(72)      NOT NULL,
+    processed_at TIMESTAMP        NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_withdraws_number

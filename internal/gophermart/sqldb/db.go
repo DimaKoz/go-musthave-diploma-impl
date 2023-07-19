@@ -96,11 +96,11 @@ CREATE INDEX IF NOT EXISTS idx_orders_status_username
 
 CREATE TABLE IF NOT EXISTS withdraws
 (
-    id          SERIAL PRIMARY KEY,
-    number      VARCHAR(42)      NOT NULL,
-    sum         DOUBLE PRECISION NOT NULL,
-    username    VARCHAR(72)      NOT NULL,
-    uploaded_at TIMESTAMP        NOT NULL
+    id           SERIAL PRIMARY KEY,
+    number       VARCHAR(42)      NOT NULL,
+    sum          DOUBLE PRECISION NOT NULL,
+    username     VARCHAR(72)      NOT NULL,
+    processed_at TIMESTAMP        NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_withdraws_number
@@ -165,7 +165,7 @@ func AddOrder(pgConn *PgxIface, order *accrual.OrderExt) error {
 func AddWithdraw(pgConn *PgxIface, withdraw accrual.WithdrawExt) error {
 	_, err := (*pgConn).Exec(
 		context.Background(),
-		"insert into withdraws(number, sum, username, uploaded_at) values($1, $2, $3, $4)",
+		"insert into withdraws(number, sum, username, processed_at) values($1, $2, $3, $4)",
 		withdraw.Order, withdraw.Sum, withdraw.Username, withdraw.ProcessedAt)
 	if err != nil {
 		return fmt.Errorf("failed to insert into orders: %w", err)
@@ -265,16 +265,17 @@ func GetCreditByUsername(pgConn *PgxIface, username string) (float32, error) {
 func FindWithdrawsByUsername(pgConn *PgxIface, username string) (*[]accrual.WithdrawExt, error) {
 	result := make([]accrual.WithdrawExt, 0)
 	rows, err := (*pgConn).Query(context.Background(),
-		"SELECT number, sum, uploaded_at FROM withdraws WHERE username=$1 AND sum > 0.01 ORDER BY uploaded_at ASC", username)
+		"SELECT number, sum, processed_at FROM withdraws WHERE username=$1 AND sum > 0.01 ORDER BY processed_at ASC",
+		username)
 	if err != nil {
 		return &result, fmt.Errorf("failed to query: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var number string
-		var uploadedAt time.Time
+		var processedAt time.Time
 		var sum float32
-		err = rows.Scan(&number, &sum, &uploadedAt)
+		err = rows.Scan(&number, &sum, &processedAt)
 		if err != nil {
 			return &result, fmt.Errorf("failed to scan a row: %w", err)
 		}
@@ -282,7 +283,7 @@ func FindWithdrawsByUsername(pgConn *PgxIface, username string) (*[]accrual.With
 		withdraw := accrual.WithdrawExt{
 			Order:       number,
 			Sum:         sum,
-			ProcessedAt: uploadedAt,
+			ProcessedAt: processedAt,
 			Username:    username,
 		}
 		result = append(result, withdraw)
