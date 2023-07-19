@@ -105,7 +105,6 @@ CREATE TABLE IF NOT EXISTS withdraws
 
 CREATE INDEX IF NOT EXISTS idx_withdraws_number
     ON withdraws USING hash (number);
-
 CREATE INDEX IF NOT EXISTS idx_withdraws_username
     ON withdraws USING hash (username);
 CREATE INDEX IF NOT EXISTS idx_withdraws_status_username
