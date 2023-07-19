@@ -6,15 +6,13 @@ import (
 	"go.uber.org/zap"
 )
 
-var zapSugar zap.SugaredLogger
-
 var logValuesFunc = func(c echo.Context, loggerValues middleware.RequestLoggerValues) error {
-	zapSugar.Infow("request",
+	zap.S().Infow("request",
 		zap.String("Method", loggerValues.Method),
 		zap.String("URI", loggerValues.URI),
 		zap.Duration("latency", loggerValues.Latency),
 	)
-	zapSugar.Infow("response",
+	zap.S().Infow("response",
 		zap.Int("status", loggerValues.Status),
 		zap.String("length", loggerValues.ContentLength),
 		zap.Int64("size", loggerValues.ResponseSize),
@@ -24,8 +22,7 @@ var logValuesFunc = func(c echo.Context, loggerValues middleware.RequestLoggerVa
 }
 
 // GetRequestLoggerConfig returns middleware.RequestLoggerConfig.
-func GetRequestLoggerConfig(sugar zap.SugaredLogger) middleware.RequestLoggerConfig {
-	zapSugar = sugar
+func GetRequestLoggerConfig() middleware.RequestLoggerConfig {
 	result := middleware.RequestLoggerConfig{ //nolint:exhaustruct
 		LogURI:           true,
 		LogStatus:        true,
@@ -41,9 +38,9 @@ func GetRequestLoggerConfig(sugar zap.SugaredLogger) middleware.RequestLoggerCon
 }
 
 // GetBodyLoggerHandler returns middleware.BodyDumpHandler.
-func GetBodyLoggerHandler(sugar zap.SugaredLogger) middleware.BodyDumpHandler {
+func GetBodyLoggerHandler() middleware.BodyDumpHandler {
 	return func(c echo.Context, reqBody, resBody []byte) {
-		sugar.Infow(
+		zap.S().Infow(
 			"body:", "reqBody:", string(reqBody),
 		)
 	}

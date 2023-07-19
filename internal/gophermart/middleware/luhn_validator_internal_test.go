@@ -12,7 +12,7 @@ import (
 
 func TestOrderValidatorMiddleware(t *testing.T) {
 	echoFramework := echo.New()
-	echoFramework.Use(OrderValidator(echoFramework.Logger))
+	echoFramework.Use(OrderValidator())
 	req := httptest.NewRequest(echo.GET, "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -30,7 +30,7 @@ const (
 
 func TestOrderValidatorMiddleware404(t *testing.T) {
 	echoFramework := echo.New()
-	echoFramework.Use(OrderValidator(echoFramework.Logger))
+	echoFramework.Use(OrderValidator())
 	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(okOrder))
 	rec := httptest.NewRecorder()
 
@@ -43,7 +43,7 @@ func TestOrderValidatorMiddleware404(t *testing.T) {
 
 func TestOrderValidatorMiddleware422(t *testing.T) {
 	echoFramework := echo.New()
-	echoFramework.Use(OrderValidator(echoFramework.Logger))
+	echoFramework.Use(OrderValidator())
 	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(badOrder))
 	rec := httptest.NewRecorder()
 

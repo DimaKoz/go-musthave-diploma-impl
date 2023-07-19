@@ -7,10 +7,11 @@ import (
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/security"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 )
 
 // OrderValidator checks luhn number for order value.
-func OrderValidator(logger echo.Logger) echo.MiddlewareFunc {
+func OrderValidator() echo.MiddlewareFunc {
 	badLuhn := echo.NewHTTPError(http.StatusUnprocessableEntity, "bad order")
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -22,17 +23,17 @@ func OrderValidator(logger echo.Logger) echo.MiddlewareFunc {
 			}
 			echoCtx.Request().Body = io.NopCloser(bytes.NewBuffer(reqBody)) // Reset
 			if len(reqBody) == 0 {
-				logger.Warnf("failed to find order number")
+				zap.S().Warnf("failed to find order number")
 
 				return badLuhn
 			}
 			isValid := security.IsValidLuhnNumber(string(reqBody))
 			if !isValid {
-				logger.Warnf("bad lunh number for [%s]", string(reqBody))
+				zap.S().Warnf("bad lunh number for [%s]", string(reqBody))
 
 				return badLuhn
 			}
-			logger.Infof("lunh number is correct for [%s]", string(reqBody))
+			zap.S().Infof("lunh number is correct for [%s]", string(reqBody))
 			if err := next(echoCtx); err != nil {
 				echoCtx.Error(err)
 			}

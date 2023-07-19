@@ -28,28 +28,27 @@ func Run() {
 		_ = logger.Sync()
 	}(loggerZap)
 
-	sugar := *loggerZap.Sugar()
 	zap.ReplaceGlobals(loggerZap)
 
 	cfg := config.NewConfig()
 	if err = setupConfig(cfg, config.ProcessEnvServer); err != nil {
 		log.Error(err)
-		sugar.Error(err)
+		zap.S().Error(err)
 
 		return
 	}
 	echoFramework := echo.New()
-	sugar.Info("cfg:" + cfg.String())
+	zap.S().Info("cfg:" + cfg.String())
 
 	var conn *sqldb.PgxIface
 	if conn, err = sqldb.ConnectDB(cfg, echoFramework.Logger); err == nil {
 		defer (*conn).Close(context.Background())
 	} else if os.Getenv("GO_ENV1") != "testing" {
-		sugar.Errorf("failed to get a db connection by %s", err.Error())
+		zap.S().Errorf("failed to get a db connection by %s", err.Error())
 
 		return
 	}
-	startServer(echoFramework, conn, *cfg, sugar)
+	startServer(echoFramework, conn, *cfg)
 }
 
 var (
@@ -71,10 +70,10 @@ func setupConfig(cfg *config.Config, processing config.ProcessEnv) error {
 	return nil
 }
 
-func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config, sugar zap.SugaredLogger) {
-	loggerConfig := middleware.GetRequestLoggerConfig(sugar)
+func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Config) {
+	loggerConfig := middleware.GetRequestLoggerConfig()
 	log2 := middleware2.RequestLoggerWithConfig(loggerConfig)
-	log3 := middleware2.BodyDump(middleware.GetBodyLoggerHandler(sugar))
+	log3 := middleware2.BodyDump(middleware.GetBodyLoggerHandler())
 
 	// Setup
 	baseHandler := handler.NewBaseHandler(conn, cfg)
@@ -85,11 +84,11 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 		log2, log3)
 
 	authM := middleware.AuthValidator(conn, echoFramework.Logger)
-	orderValidM := middleware.OrderValidator(echoFramework.Logger)
+
 	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler,
 		log2, log3, authM)
 	echoFramework.POST("/api/user/orders", baseHandler.OrderUploadHandler,
-		log2, log3, authM, orderValidM)
+		log2, log3, authM, middleware.OrderValidator())
 	echoFramework.POST("/api/user/balance/withdraw", baseHandler.WithdrawHandler,
 		log2, log3, authM)
 	echoFramework.GET("/api/user/balance", baseHandler.BalanceHandler,
@@ -99,7 +98,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 
 	// Start server
 	go func(cfg config.Config) {
-		sugar.Info("start server")
+		zap.S().Info("start server")
 		if err := echoFramework.Start(cfg.Address); err != nil && errors.Is(err, http.ErrServerClosed) {
 			echoFramework.Logger.Warn("shutting down the server")
 		}
@@ -109,11 +108,11 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
-	sugar.Info("quit...")
+	zap.S().Info("quit...")
 	timeoutDelay := 10
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutDelay)*time.Second)
 	defer cancel()
 	if err := echoFramework.Shutdown(ctx); err != nil {
-		echoFramework.Logger.Fatal(err)
+		zap.S().Fatal(err)
 	}
 }
