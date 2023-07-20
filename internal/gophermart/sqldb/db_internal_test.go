@@ -103,13 +103,55 @@ func TestFindOrderByNumberOk(t *testing.T) {
 
 	mock.ExpectQuery(
 		"SELECT number, status, accrual, username, uploaded_at FROM orders WHERE number=\\$1").
-		WithArgs("user1").
+		WithArgs("79927398713").
 		WillReturnRows(rows)
 
 	var pgConn PgxIface = mock
-	cred, err := FindOrderByNumber(&pgConn, "user1")
+	order, err := FindOrderByNumber(&pgConn, "79927398713")
 	assert.NoError(t, err)
-	log.Println("cred:", cred)
+	log.Println("order:", order)
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+
+	rows2 := pgxmock.NewRows([]string{"number", "status", "accrual", "uploaded_at"}).
+		AddRow("79927398713", "NEW", float32(0), now)
+
+	mock.ExpectQuery(
+		"SELECT number, status, accrual, uploaded_at FROM orders WHERE username=\\$1").
+		WithArgs("user1").
+		WillReturnRows(rows2)
+	orders, err := FindOrdersByUsername(&pgConn, "user1")
+	assert.NoError(t, err)
+	assert.NotNil(t, orders)
+	assert.Len(t, *orders, 1)
+	log.Println("orders:", orders)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestFindOrdersByUsernameErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	var pgConn PgxIface = mock
+
+	mock.ExpectQuery(
+		"SELECT number, status, accrual, uploaded_at FROM orders WHERE username=\\$1").
+		WithArgs("user1").
+		WillReturnError(io.EOF)
+	orders, err := FindOrdersByUsername(&pgConn, "user1")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, io.EOF)
+	assert.NotNil(t, orders)
+	assert.Len(t, *orders, 0)
+	log.Println("orders:", orders)
 
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
@@ -522,6 +564,61 @@ func TestAddWithdrawErr(t *testing.T) {
 	err = AddWithdraw(&pgConn, *withdraw)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, io.EOF)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestFindWithdrawsByUsernameOk(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+	now := time.Now()
+
+	var pgConn PgxIface = mock
+
+	rows2 := pgxmock.NewRows([]string{"number", "sum", "processed_at"}).
+		AddRow("79927398713", float32(0), now)
+
+	mock.ExpectQuery(
+		"SELECT number, sum, processed_at FROM withdraws WHERE username=\\$1").
+		WithArgs("user1").
+		WillReturnRows(rows2)
+	withdraws, err := FindWithdrawsByUsername(&pgConn, "user1")
+	assert.NoError(t, err)
+	assert.NotNil(t, withdraws)
+	assert.Len(t, *withdraws, 1)
+	log.Println("withdraws:", withdraws)
+
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestFindWithdrawsByUsernameErr(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	var pgConn PgxIface = mock
+
+	mock.ExpectQuery(
+		"SELECT number, sum, processed_at FROM withdraws WHERE username=\\$1").
+		WithArgs("user1").
+		WillReturnError(io.EOF)
+	withdraws, err := FindWithdrawsByUsername(&pgConn, "user1")
+	assert.Error(t, err)
+	assert.NotNil(t, withdraws)
+	assert.Len(t, *withdraws, 0)
 
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
