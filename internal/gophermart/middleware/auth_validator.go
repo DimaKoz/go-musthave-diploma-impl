@@ -20,7 +20,6 @@ func AuthValidator(dbConn *sqldb.PgxIface) echo.MiddlewareFunc {
 }
 
 func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, next echo.HandlerFunc) error {
-
 	zap.S().Info("AuthValidator: ", echoCtx.Request().Method, " ", echoCtx.Request().URL)
 	zap.S().Info("AuthValidator: Headers: ", echoCtx.Request().Header)
 	isAuthorized := handler.IsAuthorized(echoCtx, dbConn)
