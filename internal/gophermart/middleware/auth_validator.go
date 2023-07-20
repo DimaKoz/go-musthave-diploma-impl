@@ -11,23 +11,22 @@ import (
 )
 
 // AuthValidator checks 'Authorization' header and its value.
-func AuthValidator(dbConn *sqldb.PgxIface, logger echo.Logger) echo.MiddlewareFunc {
+func AuthValidator(dbConn *sqldb.PgxIface) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(echoCtx echo.Context) error {
-			return validate(echoCtx, dbConn, logger, next)
+			return validate(echoCtx, dbConn, next)
 		}
 	}
 }
 
-func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, _ echo.Logger, next echo.HandlerFunc) error {
-	logger := zap.L().Sugar()
+func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, next echo.HandlerFunc) error {
 
-	logger.Info("AuthValidator: ", echoCtx.Request().Method, " ", echoCtx.Request().URL)
-	logger.Info("AuthValidator: Headers: ", echoCtx.Request().Header)
+	zap.S().Info("AuthValidator: ", echoCtx.Request().Method, " ", echoCtx.Request().URL)
+	zap.S().Info("AuthValidator: Headers: ", echoCtx.Request().Header)
 	isAuthorized := handler.IsAuthorized(echoCtx, dbConn)
 	authHeader := echoCtx.Request().Header.Get("Authorization")
 	if !isAuthorized {
-		logger.Warn("AuthValidator: failed to check an authorization for: [%s]",
+		zap.S().Warn("AuthValidator: failed to check an authorization for: [%s]",
 			authHeader)
 		err := handler.WrapHandlerErr(echoCtx, http.StatusUnauthorized,
 			"AuthValidator: failed to check an authorization: %s", handler.ErrUnauthorised)
@@ -35,7 +34,7 @@ func validate(echoCtx echo.Context, dbConn *sqldb.PgxIface, _ echo.Logger, next 
 		return fmt.Errorf("%w", err)
 	}
 
-	logger.Infof("AuthValidator: Authorization header is correct for [%s]",
+	zap.S().Infof("AuthValidator: Authorization header is correct for [%s]",
 		authHeader)
 	if err := next(echoCtx); err != nil {
 		echoCtx.Error(err)

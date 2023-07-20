@@ -83,7 +83,7 @@ func startServer(echoFramework *echo.Echo, conn *sqldb.PgxIface, cfg config.Conf
 	echoFramework.POST("/api/user/login", baseHandler.LoginHandler,
 		log2, log3)
 
-	authM := middleware.AuthValidator(conn, echoFramework.Logger)
+	authM := middleware.AuthValidator(conn)
 
 	echoFramework.GET("/api/user/orders", baseHandler.OrdersListHandler,
 		log2, log3, authM)
