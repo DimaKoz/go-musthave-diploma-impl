@@ -42,7 +42,7 @@ func TestGetRequestLoggerConfig(t *testing.T) {
 		want middleware.RequestLoggerConfig
 	}{
 		{
-			name: "test RequestLoggerConfig ",
+			name: "testRequestLoggerConfig",
 			args: args{
 				sugar: sugar,
 			},
