@@ -38,9 +38,7 @@ func (h *BaseHandler) RegistrationHandler(ctx echo.Context) error {
 	}
 
 	AddAuthHeaders(ctx, incomeCred.Login)
-	if err := ctx.NoContent(http.StatusOK); err != nil {
-		return fmt.Errorf("%w", err)
-	}
+	_ = ctx.NoContent(http.StatusOK)
 
 	return nil
 }
