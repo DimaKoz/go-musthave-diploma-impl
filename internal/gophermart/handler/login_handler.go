@@ -28,20 +28,17 @@ func (h *BaseHandler) LoginHandler(ctx echo.Context) error {
 			"LoginHandler: failed to find login by: %s", err)
 	}
 
-	if cred == nil {
-		return fmt.Errorf("%w", ctx.String(http.StatusUnauthorized,
-			fmt.Sprintf("LoginHandler: [%s] failed to find login", incomeCred.Login)))
-	}
-
 	if !cred.IsPassCorrect(incomeCred.Password) {
-		return fmt.Errorf("%w", ctx.String(http.StatusUnauthorized,
-			fmt.Sprintf("LoginHandler: [%s/%s] wrong credentials", incomeCred.Login, incomeCred.Password)))
+		errStr := fmt.Sprintf(" [%s/%s] wrong credentials",
+			incomeCred.Login, incomeCred.Password)
+		err = errors.New(errStr) //nolint:goerr113
+
+		return WrapHandlerErr(ctx, http.StatusUnauthorized,
+			"LoginHandler: failed to login by: %s", err)
 	}
 
 	AddAuthHeaders(ctx, incomeCred.Login)
-	if err := ctx.NoContent(http.StatusOK); err != nil {
-		return fmt.Errorf("%w", err)
-	}
+	_ = ctx.NoContent(http.StatusOK)
 
 	return nil
 }

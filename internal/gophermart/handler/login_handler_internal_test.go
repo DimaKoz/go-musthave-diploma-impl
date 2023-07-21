@@ -17,7 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegistrationHandler(t *testing.T) {
+const testLoginRightBody = "{\"login\":\"login2\",\"password\":\"password2\"}"
+
+func TestLoginHandler(t *testing.T) {
 	// Mock db
 	// DB connection
 	mock, err := pgxmock.NewConn()
@@ -28,15 +30,12 @@ func TestRegistrationHandler(t *testing.T) {
 		require.NoError(t, err)
 	}(mock, context.Background())
 
-	rs := pgxmock.NewRows([]string{"name", "password"})
+	rs := pgxmock.NewRows([]string{"name", "password"}).
+		AddRow("login2", "$2a$04$KujIDhc7zKDw0y2mVrNODOMYLBcc1B7kxTIiOf7unhaLHB/dr/9Mq")
 
 	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
 		WithArgs("login2").
 		WillReturnRows(rs)
-
-	mock.ExpectExec("insert into mart_users").
-		WithArgs("login2", pgxmock.AnyArg()).
-		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 	var pgConn sqldb.PgxIface = mock
 
@@ -54,7 +53,7 @@ func TestRegistrationHandler(t *testing.T) {
 
 	baseH := NewBaseHandler(&pgConn, *cfg)
 
-	err = baseH.RegistrationHandler(ctx)
+	err = baseH.LoginHandler(ctx)
 	assert.NoError(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
@@ -70,161 +69,7 @@ func TestRegistrationHandler(t *testing.T) {
 	assert.Equal(t, wantHeaderA, gotHeaderA)
 }
 
-func TestRegistrationHandlerAddCredentialsErr(t *testing.T) {
-	// Mock db
-	// DB connection
-	mock, err := pgxmock.NewConn()
-	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
-	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
-		mock.ExpectClose()
-		err = mock.Close(ctx)
-		require.NoError(t, err)
-	}(mock, context.Background())
-
-	rs := pgxmock.NewRows([]string{"name", "password"})
-
-	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
-		WithArgs("login2").
-		WillReturnRows(rs)
-
-	var pgConn sqldb.PgxIface = mock
-
-	// Mock echo
-	echoFr := echo.New()
-	body := "{\"login\":\"login2\",\"password\":\"password2\"}"
-	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
-	rec := httptest.NewRecorder()
-
-	ctx := echoFr.NewContext(req, rec)
-
-	defer echoFr.Close()
-
-	cfg := config.NewConfig()
-
-	baseH := NewBaseHandler(&pgConn, *cfg)
-
-	err = baseH.RegistrationHandler(ctx)
-	assert.NoError(t, err)
-	err = mock.ExpectationsWereMet()
-	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
-
-	wantStatusCode := http.StatusInternalServerError
-	assert.Equal(t, wantStatusCode, rec.Code)
-	res := rec.Result()
-	gotHeaderA := res.Header.Get("Authorization")
-	err = res.Body.Close()
-	require.NoError(t, err)
-	assert.Empty(t, gotHeaderA)
-}
-
-func TestRegistrationHandlerBadCredentialsErr(t *testing.T) {
-	// Mock db
-	// DB connection
-	mock, err := pgxmock.NewConn()
-	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
-	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
-		mock.ExpectClose()
-		err = mock.Close(ctx)
-		require.NoError(t, err)
-	}(mock, context.Background())
-
-	rs := pgxmock.NewRows([]string{"name", "password"})
-
-	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
-		WithArgs("login2").
-		WillReturnRows(rs)
-
-	var pgConn sqldb.PgxIface = mock
-
-	// Mock echo
-	echoFr := echo.New()
-	body := "{\"login\":\"login2\"," +
-		"\"password\":\"password2password2password2password2password2password2password2password2password2\"}"
-	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
-	rec := httptest.NewRecorder()
-
-	ctx := echoFr.NewContext(req, rec)
-
-	defer echoFr.Close()
-
-	cfg := config.NewConfig()
-
-	baseH := NewBaseHandler(&pgConn, *cfg)
-
-	err = baseH.RegistrationHandler(ctx)
-	assert.NoError(t, err)
-	err = mock.ExpectationsWereMet()
-	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
-
-	wantStatusCode := http.StatusInternalServerError
-	assert.Equal(t, wantStatusCode, rec.Code)
-	res := rec.Result()
-	gotHeaderA := res.Header.Get("Authorization")
-	err = res.Body.Close()
-	require.NoError(t, err)
-	assert.Empty(t, gotHeaderA)
-}
-
-func TestRegistrationHandlerNoUserErr(t *testing.T) {
-	// Mock db
-	// DB connection
-	mock, err := pgxmock.NewConn()
-	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
-	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
-		mock.ExpectClose()
-		err = mock.Close(ctx)
-		require.NoError(t, err)
-	}(mock, context.Background())
-
-	rows := pgxmock.
-		NewRows([]string{"name", "password"}).
-		AddRow("login2", "password2")
-
-	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
-		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(rows)
-
-	var pgConn sqldb.PgxIface = mock
-
-	// Mock echo
-	echoFr := echo.New()
-	body := "{\"login\":\"login2\"," +
-		"\"password\":\"password2\"}"
-	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
-	rec := httptest.NewRecorder()
-
-	ctx := echoFr.NewContext(req, rec)
-
-	defer echoFr.Close()
-
-	cfg := config.NewConfig()
-
-	baseH := NewBaseHandler(&pgConn, *cfg)
-
-	err = baseH.RegistrationHandler(ctx)
-	assert.Error(t, err)
-	err = mock.ExpectationsWereMet()
-	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
-
-	wantStatusCode := http.StatusConflict
-	assert.Equal(t, wantStatusCode, rec.Code)
-	res := rec.Result()
-	gotHeaderA := res.Header.Get("Authorization")
-	err = res.Body.Close()
-	require.NoError(t, err)
-	assert.Empty(t, gotHeaderA)
-}
-
-func TestRegistrationHandlerBadRequest(t *testing.T) {
+func TestLoginHandlerBadRequest(t *testing.T) {
 	// Mock echo
 	echoFr := echo.New()
 	body := "'"
@@ -232,28 +77,124 @@ func TestRegistrationHandlerBadRequest(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	rec := httptest.NewRecorder()
-
 	ctx := echoFr.NewContext(req, rec)
-
 	defer echoFr.Close()
 
 	cfg := config.NewConfig()
 
 	baseH := NewBaseHandler(nil, *cfg)
 
-	err := baseH.RegistrationHandler(ctx)
+	err := baseH.LoginHandler(ctx)
 	assert.NoError(t, err)
 
+	got := rec.Result()
+	defer got.Body.Close()
+
 	wantStatusCode := http.StatusBadRequest
-	assert.Equal(t, wantStatusCode, rec.Code)
-	res := rec.Result()
-	gotHeaderA := res.Header.Get("Authorization")
-	err = res.Body.Close()
-	require.NoError(t, err)
+	assert.Equal(t, wantStatusCode, got.StatusCode, "StatusCode got: %v, want: %v", got.StatusCode, wantStatusCode)
+
+	gotHeaderA := got.Header.Get("Authorization")
 	assert.Empty(t, gotHeaderA)
 }
 
-func TestRegistrationHandlerUnknownCredentialsErr(t *testing.T) {
+func TestLoginHandlerUnauthorizedUserNotFound(t *testing.T) {
+	// Mock db
+	// DB connection
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	rs := pgxmock.NewRows([]string{"name", "password"})
+
+	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
+		WithArgs("login5").
+		WillReturnRows(rs)
+
+	var pgConn sqldb.PgxIface = mock
+
+	// Mock echo
+	echoFr := echo.New()
+	body := "{\"login\":\"login5\",\"password\":\"password5\"}"
+	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	rec := httptest.NewRecorder()
+	ctx := echoFr.NewContext(req, rec)
+	defer echoFr.Close()
+
+	cfg := config.NewConfig()
+
+	baseH := NewBaseHandler(&pgConn, *cfg)
+
+	err = baseH.LoginHandler(ctx)
+	assert.NoError(t, err)
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+
+	got := rec.Result()
+	defer got.Body.Close()
+
+	wantStatusCode := http.StatusUnauthorized
+	assert.Equal(t, wantStatusCode, got.StatusCode, "StatusCode got: %v, want: %v", got.StatusCode, wantStatusCode)
+
+	gotHeaderA := got.Header.Get("Authorization")
+	assert.Empty(t, gotHeaderA)
+}
+
+func TestLoginHandlerUnauthorizedWrongPassword(t *testing.T) {
+	// Mock db
+	// DB connection
+	mock, err := pgxmock.NewConn()
+	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
+	defer func(mock pgxmock.PgxConnIface, ctx context.Context) {
+		mock.ExpectClose()
+		err = mock.Close(ctx)
+		require.NoError(t, err)
+	}(mock, context.Background())
+
+	rs := pgxmock.NewRows([]string{"name", "password"}).
+		AddRow("login2", "wrong value")
+
+	mock.ExpectQuery("select name, password from mart_users where name=\\$1").
+		WithArgs("login2").
+		WillReturnRows(rs)
+
+	var pgConn sqldb.PgxIface = mock
+
+	// Mock echo
+	echoFr := echo.New()
+	body := "{\"login\":\"login2\",\"password\":\"wrong value\"}"
+	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	rec := httptest.NewRecorder()
+	ctx := echoFr.NewContext(req, rec)
+	defer echoFr.Close()
+
+	cfg := config.NewConfig()
+
+	baseH := NewBaseHandler(&pgConn, *cfg)
+
+	err = baseH.LoginHandler(ctx)
+	assert.NoError(t, err)
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+
+	got := rec.Result()
+	defer got.Body.Close()
+
+	wantStatusCode := http.StatusUnauthorized
+	assert.Equal(t, wantStatusCode, got.StatusCode, "StatusCode got: %v, want: %v", got.StatusCode, wantStatusCode)
+
+	gotHeaderA := got.Header.Get("Authorization")
+	assert.Empty(t, gotHeaderA)
+}
+
+func TestLoginHandlerInternalErr(t *testing.T) {
 	// Mock db
 	// DB connection
 	mock, err := pgxmock.NewConn()
@@ -272,32 +213,29 @@ func TestRegistrationHandlerUnknownCredentialsErr(t *testing.T) {
 
 	// Mock echo
 	echoFr := echo.New()
-	body := "{\"login\":\"login2\"," +
-		"\"password\":\"password2\"}"
+	body := "{\"login\":\"login2\",\"password\":\"wrong value\"}"
 	req := httptest.NewRequest(echo.POST, "http://localhost:1323/admin/user_points/settings", strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	rec := httptest.NewRecorder()
-
 	ctx := echoFr.NewContext(req, rec)
-
 	defer echoFr.Close()
 
 	cfg := config.NewConfig()
 
 	baseH := NewBaseHandler(&pgConn, *cfg)
 
-	err = baseH.RegistrationHandler(ctx)
+	err = baseH.LoginHandler(ctx)
 	assert.NoError(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
+
+	got := rec.Result()
+	defer got.Body.Close()
 
 	wantStatusCode := http.StatusInternalServerError
-	assert.Equal(t, wantStatusCode, rec.Code)
-	res := rec.Result()
-	gotHeaderA := res.Header.Get("Authorization")
-	err = res.Body.Close()
-	require.NoError(t, err)
+	assert.Equal(t, wantStatusCode, got.StatusCode, "StatusCode got: %v, want: %v", got.StatusCode, wantStatusCode)
+
+	gotHeaderA := got.Header.Get("Authorization")
 	assert.Empty(t, gotHeaderA)
 }
