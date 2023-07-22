@@ -1,12 +1,17 @@
 package middleware
 
 import (
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestLogValuesFunc(t *testing.T) {
@@ -69,4 +74,33 @@ func TestGetRequestLoggerConfig(t *testing.T) {
 			assert.Equal(t, got.LogLatency, test.want.LogLatency)
 		})
 	}
+}
+
+func TestGetBodyLoggerHandler(t *testing.T) {
+	want := "body:[TestBody]"
+
+	logger := zaptest.NewLogger(t, zaptest.WrapOptions(zap.Hooks(func(e zapcore.Entry) error {
+		assert.Equal(t, want, e.Message)
+
+		return nil
+	})))
+	original := zap.L()
+	zap.ReplaceGlobals(logger)
+	t.Cleanup(func() {
+		zap.ReplaceGlobals(original)
+	})
+	var err error
+	echoFramework := echo.New()
+	defer func(echoFr *echo.Echo) {
+		err = echoFr.Close()
+		require.NoError(t, err)
+	}(echoFramework)
+
+	echoFramework.Use(middleware.BodyDump(GetBodyLoggerHandler()))
+
+	req := httptest.NewRequest(echo.GET, "/", strings.NewReader("TestBody"))
+	rec := httptest.NewRecorder()
+
+	// Using the ServerHTTP on echo will trigger the router and middleware
+	echoFramework.ServeHTTP(rec, req)
 }

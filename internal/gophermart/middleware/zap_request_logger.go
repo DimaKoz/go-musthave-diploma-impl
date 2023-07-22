@@ -40,8 +40,6 @@ func GetRequestLoggerConfig() middleware.RequestLoggerConfig {
 // GetBodyLoggerHandler returns middleware.BodyDumpHandler.
 func GetBodyLoggerHandler() middleware.BodyDumpHandler {
 	return func(c echo.Context, reqBody, resBody []byte) {
-		zap.S().Infow(
-			"body:", "reqBody:", string(reqBody),
-		)
+		zap.S().Debugf("body:[%s]", string(reqBody))
 	}
 }
