@@ -18,9 +18,7 @@ func (h *BaseHandler) BalanceHandler(ctx echo.Context) error {
 	balance, err := repository.GetBalance(h.conn, username)
 	if err != nil {
 		zap.S().Warnf("BalanceHandler: internal error %s", err.Error())
-		if err = ctx.NoContent(http.StatusInternalServerError); err != nil {
-			return fmt.Errorf("%w", err)
-		}
+		_ = ctx.NoContent(http.StatusInternalServerError)
 
 		return nil
 	}

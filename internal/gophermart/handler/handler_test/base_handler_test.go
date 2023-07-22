@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/config"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/handler"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,7 @@ func TestAddAuthHeaders(t *testing.T) {
 	want := "Authorization:[asdf]"
 	message := "asdf"
 
-	AddAuthHeaders(ctx, message)
+	handler.AddAuthHeaders(ctx, message)
 
 	gotAuth1 := ctx.Response().Header().Get("Authorization")
 	gotAuth2 := ctx.Response().Header().Get("Set-Cookie")
@@ -42,19 +43,19 @@ func TestNewBaseHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *BaseHandler
+		want *handler.BaseHandler
 	}{
 		{
 			name: "nil dbConn",
 			args: args{dbConn: nil},
-			want: NewBaseHandler(nil, *cfg),
+			want: handler.NewBaseHandler(nil, *cfg),
 		},
 	}
 
 	for _, tt := range tests {
 		test := tt
 		t.Run(test.name, func(t *testing.T) {
-			got := NewBaseHandler(test.args.dbConn, *cfg)
+			got := handler.NewBaseHandler(test.args.dbConn, *cfg)
 			assert.NotNil(t, got)
 			assert.Equal(t, test.want, got)
 		})
@@ -96,7 +97,7 @@ func TestWrapHandlerErr(t *testing.T) {
 	for _, test := range tests {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
-			err := WrapHandlerErr(tt.args.ctx, tt.args.statusCode, tt.args.msg, tt.args.errIn)
+			err := handler.WrapHandlerErr(tt.args.ctx, tt.args.statusCode, tt.args.msg, tt.args.errIn)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -158,7 +159,7 @@ func TestWrapHandlerErrIO(t *testing.T) {
 		errIn:      errIn1,
 	}
 
-	err := WrapHandlerErr(arguments.ctx, arguments.statusCode, arguments.msg, arguments.errIn)
+	err := handler.WrapHandlerErr(arguments.ctx, arguments.statusCode, arguments.msg, arguments.errIn)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, io.EOF)
 }
@@ -173,13 +174,13 @@ func TestGetAuthFromCtxEmpty(t *testing.T) {
 	req := httptest.NewRequest(echo.GET, "http://localhost:1323", nil)
 	rec := httptest.NewRecorder()
 	ctx := echoFr.NewContext(req, rec)
-	got := GetAuthFromCtx(ctx)
+	got := handler.GetAuthFromCtx(ctx)
 
 	assert.Empty(t, got)
 
 	ctx.Request().Header.Add("Authorization", "123")
 
-	got = GetAuthFromCtx(ctx)
+	got = handler.GetAuthFromCtx(ctx)
 	assert.Empty(t, got)
 }
 
@@ -194,6 +195,6 @@ func TestIsAuthorizedFalse(t *testing.T) {
 	rec := httptest.NewRecorder()
 	ctx := echoFr.NewContext(req, rec)
 
-	got := IsAuthorized(ctx, nil)
+	got := handler.IsAuthorized(ctx, nil)
 	assert.False(t, got)
 }

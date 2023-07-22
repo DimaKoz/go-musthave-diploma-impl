@@ -334,7 +334,7 @@ func TestGetCreditByUsernameErr(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetCreditByUsername0(t *testing.T) {
+func TestGetCreditByUsername42(t *testing.T) {
 	mock, err := pgxmock.NewConn()
 	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
 
@@ -361,7 +361,7 @@ func TestGetCreditByUsername0(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetCreditByUsername42(t *testing.T) {
+func TestGetCreditByUsername0(t *testing.T) {
 	mock, err := pgxmock.NewConn()
 	require.NoError(t, err, fmt.Sprintf("an error '%s' was not expected when opening a stub database connection", err))
 
