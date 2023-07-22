@@ -43,9 +43,7 @@ func (h *BaseHandler) WithdrawHandler(ctx echo.Context) error {
 		respStatus = withdrawInternalError
 	}
 
-	if err = ctx.NoContent(respStatus); err != nil {
-		return fmt.Errorf("%w", err)
-	}
+	_ = ctx.NoContent(respStatus)
 
 	return nil
 }

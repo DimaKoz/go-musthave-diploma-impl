@@ -110,7 +110,6 @@ func TestRegistrationHandlerAddCredentialsErr(t *testing.T) {
 	assert.NoError(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
 
 	wantStatusCode := http.StatusInternalServerError
 	assert.Equal(t, wantStatusCode, rec.Code)
@@ -161,7 +160,6 @@ func TestRegistrationHandlerBadCredentialsErr(t *testing.T) {
 	assert.NoError(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
 
 	wantStatusCode := http.StatusInternalServerError
 	assert.Equal(t, wantStatusCode, rec.Code)
@@ -214,7 +212,6 @@ func TestRegistrationHandlerNoUserErr(t *testing.T) {
 	assert.Error(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
 
 	wantStatusCode := http.StatusConflict
 	assert.Equal(t, wantStatusCode, rec.Code)
@@ -292,7 +289,6 @@ func TestRegistrationHandlerUnknownCredentialsErr(t *testing.T) {
 	assert.NoError(t, err)
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
-	echoFr.ServeHTTP(rec, req)
 
 	wantStatusCode := http.StatusInternalServerError
 	assert.Equal(t, wantStatusCode, rec.Code)
