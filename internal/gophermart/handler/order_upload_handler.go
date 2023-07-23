@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -31,7 +30,7 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 		reqBody, _ = io.ReadAll(ctx.Request().Body)
 	}
 	orderNumber := string(reqBody)
-	log.Println("OrderUploadHandler:", "body:", orderNumber)
+	zap.S().Infoln("OrderUploadHandler:", "body:", orderNumber)
 	username := GetAuthFromCtx(ctx)
 	err := repository.AddNewOrder(h.conn, orderNumber, username)
 
@@ -58,7 +57,7 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 
 func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, username string) *accrual.OrderExt {
 	var acc accrual.OrderAccrual
-	logger := zap.L().Sugar()
+	logger := zap.S()
 	httpc := resty.New().SetBaseURL(baseURL)
 
 	req := httpc.R().
@@ -77,7 +76,7 @@ func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, usern
 		logger.Info("OrderUploadHandler:", "req.Get StatusCode:", resp.StatusCode())
 		logger.Info("OrderUploadHandler:", "req.Get resp:", resp.String())
 	}
-	log.Println("OrderUploadHandler:", "acc:", acc)
+	logger.Infoln("OrderUploadHandler:", "acc:", acc)
 	if acc.Order != "" {
 		order := acc.GetOrderExt(username, time.Now())
 		err = sqldb.UpdateOrder(pgConn, order)

@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/caarlos0/env/v6"
 	flag2 "github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -60,11 +60,11 @@ func addFlags(cfg *Config, aFlag *string, rFlag *string, dFlag *string) {
 }
 
 func ProcessEnvServer(config *Config) error {
-	log.Println(os.Environ())
+	zap.S().Infoln(os.Environ())
 
 	opts := env.Options{ //nolint:exhaustruct
 		OnSet: func(tag string, value interface{}, isDefault bool) {
-			log.Printf("Set %s to %v (default? %v)\n", tag, value, isDefault)
+			zap.S().Infof("Set %s to %v (default? %v)\n", tag, value, isDefault)
 		},
 	}
 

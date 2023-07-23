@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
@@ -13,7 +12,7 @@ import (
 // BalanceHandler handles GET `/api/user/balance`.
 func (h *BaseHandler) BalanceHandler(ctx echo.Context) error {
 	username := GetAuthFromCtx(ctx)
-	log.Println("BalanceHandler:", "username:", username)
+	zap.S().Infoln("BalanceHandler:", "username:", username)
 
 	balance, err := repository.GetBalance(h.conn, username)
 	if err != nil {
