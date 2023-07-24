@@ -3,13 +3,13 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 )
 
 const (
@@ -25,7 +25,7 @@ func (h *BaseHandler) WithdrawHandler(ctx echo.Context) error {
 		return WrapHandlerErr(ctx, http.StatusUnprocessableEntity,
 			"WithdrawalHandler: failed to get withdrawInternal: %s", fmt.Errorf("%w", err))
 	}
-	log.Println("WithdrawalHandler:", "withdrawInternal:", withdrawInternal)
+	zap.S().Infoln("WithdrawalHandler:", "withdrawInternal:", withdrawInternal)
 	username := GetAuthFromCtx(ctx)
 
 	withdraw := withdrawInternal.GetWithdrawExt(username, time.Now())
