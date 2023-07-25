@@ -26,9 +26,7 @@ func (h *BaseHandler) WithdrawsListHandler(ctx echo.Context) error {
 			status = http.StatusInternalServerError
 		}
 		zap.S().Warn(logStr)
-		if err = ctx.String(status, logStr); err != nil {
-			return fmt.Errorf("%w", err)
-		}
+		_ = ctx.NoContent(status)
 
 		return nil
 	}
