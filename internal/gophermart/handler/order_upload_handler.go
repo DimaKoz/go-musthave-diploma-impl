@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -25,7 +24,7 @@ const (
 
 // OrderUploadHandler handles POST `/api/user/orders`.
 func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
-	reqBody := []byte{}
+	var reqBody []byte
 	if ctx.Request().Body != nil { // Read
 		reqBody, _ = io.ReadAll(ctx.Request().Body)
 	}
@@ -48,9 +47,7 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 	}
 
 	go SendAccRequest(h.conn, orderNumber, h.cfg.Accrual, username)
-	if err := ctx.NoContent(respStatus); err != nil {
-		return fmt.Errorf("%w", err)
-	}
+	_ = ctx.NoContent(respStatus)
 
 	return nil
 }
