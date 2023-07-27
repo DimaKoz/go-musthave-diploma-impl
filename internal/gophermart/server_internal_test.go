@@ -10,6 +10,9 @@ import (
 	flag2 "github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestSetupConfigOk(t *testing.T) {
@@ -94,4 +97,34 @@ func TestRunEmptyPathDB(t *testing.T) {
 	})
 	assert.Contains(t, output, "db uri is empty")
 	t.Log("log:", output)
+}
+
+func TestRunErrConnectionDB(t *testing.T) {
+	logger := zaptest.NewLogger(t, zaptest.WrapOptions(zap.Hooks(func(e zapcore.Entry) error {
+		assert.Contains(t, "failed to get a db connection by", e.Message)
+
+		return nil
+	})))
+	original := zap.L()
+	zap.ReplaceGlobals(logger)
+
+	flag2.CommandLine = flag2.NewFlagSet(os.Args[0], flag2.ContinueOnError)
+	flag2.CommandLine.SetOutput(io.Discard)
+
+	origValueAddress := os.Getenv(config.EnvKeyAddress)
+	err := os.Setenv(config.EnvKeyAddress, ":8080") //nolint:tenv
+	require.NoError(t, err)
+	origValuePathDB := os.Getenv(config.EnvKeyDatabaseURI)
+	err = os.Setenv(config.EnvKeyDatabaseURI, "ej") //nolint:tenv
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		zap.ReplaceGlobals(original)
+
+		err = os.Setenv(config.EnvKeyAddress, origValueAddress)
+		require.NoError(t, err)
+		err = os.Setenv(config.EnvKeyDatabaseURI, origValuePathDB)
+		require.NoError(t, err)
+	})
+
+	Run()
 }

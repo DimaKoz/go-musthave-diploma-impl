@@ -12,8 +12,8 @@ import (
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/credential"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/labstack/echo/v4"
 	"github.com/pashagolub/pgxmock/v2"
+	"go.uber.org/zap"
 )
 
 type PgxIface interface {
@@ -29,7 +29,7 @@ type PgxIface interface {
 var errNoInfoConnectionDB = errors.New("no DB connection info")
 
 // ConnectDB opens a connection to the database.
-func ConnectDB(cfg *config.Config, logger echo.Logger) (*PgxIface, error) {
+func ConnectDB(cfg *config.Config) (*PgxIface, error) {
 	inTestRunning := os.Getenv("GO_ENV1") == "testing"
 	var conn PgxIface
 	var err error
@@ -53,7 +53,7 @@ func ConnectDB(cfg *config.Config, logger echo.Logger) (*PgxIface, error) {
 	if err = createTables(&conn, timeout); err != nil {
 		return nil, err
 	}
-	logger.Info("successfully connected to db:", conn)
+	zap.S().Infoln("successfully connected to db:", conn)
 
 	return &conn, nil
 }

@@ -41,7 +41,7 @@ func Run() {
 	zap.S().Info("cfg:" + cfg.String())
 
 	var conn *sqldb.PgxIface
-	if conn, err = sqldb.ConnectDB(cfg, echoFramework.Logger); err == nil {
+	if conn, err = sqldb.ConnectDB(cfg); err == nil {
 		defer (*conn).Close(context.Background())
 	} else if os.Getenv("GO_ENV1") != "testing" {
 		zap.S().Errorf("failed to get a db connection by %s", err.Error())
