@@ -8,6 +8,7 @@ import (
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository"
+	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/repository/cooldown"
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/sqldb"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
@@ -52,36 +53,57 @@ func (h *BaseHandler) OrderUploadHandler(ctx echo.Context) error {
 	return nil
 }
 
+func sleepIfCooldown() {
+	for { // we are waiting for finished cooldown
+		if cooldown.IsAccrualReady() {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+}
+
 func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, username string) *accrual.OrderExt {
 	var acc accrual.OrderAccrual
 	logger := zap.S()
 	httpc := resty.New().SetBaseURL(baseURL)
 
-	req := httpc.R().
-		SetResult(&acc).
-		SetPathParam("number", number)
+	sleepIfCooldown()
 
-	resp, err := req.Get("/api/orders/{number}")
-	if resp != nil && resp.Request != nil {
-		logger.Info("OrderUploadHandler:", "req.URL:", resp.Request.URL)
-	}
+	for {
+		req := httpc.R().
+			SetResult(&acc).
+			SetPathParam("number", number)
 
-	if err != nil {
-		logger.Info("OrderUploadHandler:", "req.Get err:", err)
-	}
-	if resp != nil {
-		logger.Info("OrderUploadHandler:", "req.Get StatusCode:", resp.StatusCode())
-		logger.Info("OrderUploadHandler:", "req.Get resp:", resp.String())
-	}
-	logger.Infoln("OrderUploadHandler:", "acc:", acc)
-	if acc.Order != "" {
-		order := acc.GetOrderExt(username, time.Now())
-		err = sqldb.UpdateOrder(pgConn, order)
-		if err != nil {
-			logger.Warn("err:", err.Error())
-		} else {
-			return order
+		resp, err := req.Get("/api/orders/{number}")
+		if resp != nil && resp.Request != nil {
+			logger.Info("OrderUploadHandler:", "req.URL:", resp.Request.URL)
+			logger.Info("OrderUploadHandler:", "req.Get StatusCode:", resp.StatusCode())
+			logger.Info("OrderUploadHandler:", "req.Get resp:", resp.String())
 		}
+
+		if err != nil {
+			logger.Info("OrderUploadHandler:", "req.Get err:", err)
+		}
+
+		if resp.StatusCode() == http.StatusTooManyRequests {
+			cooldown.NeedAccrualCooldown()
+			time.Sleep(1 * time.Minute)
+
+			continue
+		}
+
+		logger.Infoln("OrderUploadHandler:", "acc:", acc)
+		if acc.Order != "" {
+			order := acc.GetOrderExt(username, time.Now())
+			err = sqldb.UpdateOrder(pgConn, order)
+			if err != nil {
+				logger.Warn("err:", err.Error())
+			} else {
+				return order
+			}
+		}
+
+		break
 	}
 
 	return nil
