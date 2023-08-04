@@ -8,15 +8,14 @@ import (
 var (
 	cooldownSync    = &sync.Mutex{}
 	failTimeUnixSec int64
+	cooldownPeriod  int64
 )
 
-const cooldownPeriod = 60
-
 // NeedAccrualCooldown updates cooldown time.
-func NeedAccrualCooldown() {
+func NeedAccrualCooldown(requestedCooldownPeriod int64) {
 	cooldownSync.Lock()
 	defer cooldownSync.Unlock()
-
+	cooldownPeriod = requestedCooldownPeriod
 	failTimeUnixSec = time.Now().Unix()
 }
 

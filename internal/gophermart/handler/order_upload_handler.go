@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/DimaKoz/go-musthave-diploma-impl/internal/gophermart/model/accrual"
@@ -62,6 +63,17 @@ func sleepIfCooldown() {
 	}
 }
 
+func getRetryHeader(headers http.Header) int64 {
+	var result int64
+	var err error
+	retryHeader := headers.Get("Retry-After")
+	if result, err = strconv.ParseInt(retryHeader, 10, 64); err != nil {
+		return 0
+	}
+
+	return result
+}
+
 func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, username string) *accrual.OrderExt {
 	var acc accrual.OrderAccrual
 	logger := zap.S()
@@ -86,7 +98,7 @@ func SendAccRequest(pgConn *sqldb.PgxIface, number string, baseURL string, usern
 		}
 
 		if resp.StatusCode() == http.StatusTooManyRequests {
-			cooldown.NeedAccrualCooldown()
+			cooldown.NeedAccrualCooldown(getRetryHeader(resp.Header()))
 			time.Sleep(1 * time.Minute)
 
 			continue
